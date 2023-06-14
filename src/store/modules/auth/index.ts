@@ -38,6 +38,10 @@ export const useAuthStore = defineStore('auth-store', {
     isChatGPTAPI(state): boolean {
       return state.session?.model === 'ChatGPTAPI'
     },
+    // if state.token is undefined, null, or an empty string (""), !!state.token will be false. Otherwise, if there is a token present, !!state.token will be true.
+    isAuthenticated(state): boolean {
+      return !!state.token
+    },
   },
 
   actions: {

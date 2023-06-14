@@ -3,22 +3,32 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { setupPageGuard } from './permission'
 import { ChatLayout } from '@/views/chat/layout'
+import { useAuthStore } from '@/store'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Root',
+    redirect: '/chat',
+  },
+  {
+    path: '/home',
+    name: 'home',
+    component: () => import('@/views/home/index.vue'),
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
     component: ChatLayout,
     redirect: '/chat',
     children: [
       {
-        path: '/chat/:uuid?',
-        name: 'Chat',
+        path: ':uuid?',
+        name: 'ChatChild',
         component: () => import('@/views/chat/index.vue'),
       },
     ],
   },
-
   {
     path: '/404',
     name: '404',
@@ -42,6 +52,19 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes,
   scrollBehavior: () => ({ left: 0, top: 0 }),
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  // Check if the user is authenticated
+  if (!authStore.isAuthenticated && to.path !== '/home') {
+    // If the user is not authenticated and not trying to access home, redirect to home
+    next('/home')
+  }
+  else {
+    // Otherwise continue to the destination route
+    next()
+  }
 })
 
 setupPageGuard(router)

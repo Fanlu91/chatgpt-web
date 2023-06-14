@@ -6,23 +6,7 @@ import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendResetMail, fetc
 import { useAuthStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
-interface Props {
-  visible: boolean
-}
-
-const props = defineProps<Props>()
-
-const emit = defineEmits<Emit>()
-
-interface Emit {
-  (e: 'update:visible', visible: boolean): void
-}
-
-const show = computed({
-  get: () => props.visible,
-  set: (visible: boolean) => emit('update:visible', visible),
-})
-
+const visible = ref(true)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -52,15 +36,20 @@ const confirmPasswordStatus = computed(() => {
 })
 
 onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    router.replace('/chat')
+    return
+  }
   const verifytoken = route.query.verifytoken as string
   await handleVerify(verifytoken)
   const verifytokenadmin = route.query.verifytokenadmin as string
   await handleVerifyAdmin(verifytokenadmin)
   sign.value = route.query.verifyresetpassword as string
   if (sign.value) {
+    // redirect to /chat
+    // router.replace('/chat')
     username.value = sign.value.split('-')[0].split('|')[0]
     activeTab.value = 'resetPassword'
-    show.value = true
   }
 })
 
