@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NInput, NModal, NTabPane, NTabs, useMessage } from 'naive-ui'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendResetMail, fetchVerify, fetchVerifyAdmin } from '@/api'
+import { fetchLogin, fetchResetPassword, fetchSendResetMail, fetchUserRegister, fetchVerify, fetchVerifyAdmin } from '@/api'
 import { useAuthStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
@@ -145,7 +145,7 @@ async function handleRegister() {
 
   try {
     loading.value = true
-    const result = await fetchRegister(name, pwd)
+    const result = await fetchUserRegister(name, pwd)
     ms.success(result.message as string)
   }
   catch (error: any) {

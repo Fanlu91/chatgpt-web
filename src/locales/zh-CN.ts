@@ -33,6 +33,8 @@ export default {
     name: '昵称',
     email: '邮箱',
     phone: '手机号',
+    verificationCode: '短信验证码',
+    sendVerificationCode: '发送验证',
     password: '密码',
     passwordConfirm: '确认密码',
     resetPassword: '重置密码',

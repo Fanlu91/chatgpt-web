@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NInput, NModal, NTabPane, NTabs, useMessage } from 'naive-ui'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendResetMail, fetchVerify, fetchVerifyAdmin } from '@/api'
+import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendResetMail, fetchSendVerificationCode, fetchVerify, fetchVerifyAdmin } from '@/api'
 import { useAuthStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
@@ -14,8 +14,10 @@ const authStore = useAuthStore()
 const ms = useMessage()
 
 const loading = ref(false)
+const sendLoading = ref(false)
 const username = ref('')
 const password = ref('')
+const verificationCode = ref('')
 const sign = ref('')
 
 const disabled = computed(() => !username.value.trim() || !password.value.trim() || loading.value)
@@ -24,6 +26,8 @@ const activeTab = ref('login')
 
 const showConfirmPassword = ref(false)
 const confirmPassword = ref('')
+
+const onlyAllowNumber = (value: string) => !value || /^\d+$/.test(value)
 
 function handlePasswordInput() {
   showConfirmPassword.value = password.value.trim() !== ''
@@ -126,7 +130,7 @@ async function handleRegister() {
   const name = username.value.trim()
   const pwd = password.value.trim()
   const confirmPwd = confirmPassword.value.trim()
-
+  const verifCode = verificationCode.value.trim()
   if (!name || !pwd || !confirmPwd || pwd !== confirmPwd) {
     ms.error('两次输入的密码不一致 | Passwords don\'t match')
     return
@@ -134,7 +138,7 @@ async function handleRegister() {
 
   try {
     loading.value = true
-    const result = await fetchRegister(name, pwd)
+    const result = await fetchRegister(name, pwd, verifCode)
     ms.success(result.message as string)
   }
   catch (error: any) {
@@ -142,6 +146,25 @@ async function handleRegister() {
   }
   finally {
     loading.value = false
+  }
+}
+
+async function handleSendVerificationCode() {
+  const name = username.value.trim()
+
+  if (!name)
+    return
+
+  try {
+    sendLoading.value = true
+    const result = await fetchSendVerificationCode(name)
+    ms.success(result.message as string)
+  }
+  catch (error: any) {
+    ms.error(error.message ?? 'error')
+  }
+  finally {
+    sendLoading.value = false
   }
 }
 
@@ -201,9 +224,56 @@ async function handleResetPassword() {
           </p>
           <Icon403 class="w-[200px] m-auto" />
         </header>
-        <div style="width: 90%; max-width: 640px; margin: 0 auto; " class="space-y-4">
-          <!-- Add Tabs -->
+        <div style="width: 90%; max-width: 600px; margin: 0 auto; " class="space-y-4">
           <NTabs v-model:value="activeTab" type="line">
+            <NTabPane name="login" :tab="$t('common.login')">
+              <NInput v-model:value="username" type="text" :placeholder="$t('common.phone')" class="mb-2" />
+              <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @keypress="handlePress" />
+
+              <NButton block type="primary" :disabled="disabled" :loading="loading" @click="handleLogin">
+                {{ $t('common.login') }}
+              </NButton>
+            </NTabPane>
+
+            <NTabPane v-if="authStore.session && authStore.session.allowRegister" name="register" :tab="$t('common.register')">
+              <NInput
+                v-model:value="username"
+                type="text"
+                :allow-input="onlyAllowNumber"
+                :placeholder="$t('common.phone')"
+                class="mb-2"
+              />
+              <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @input="handlePasswordInput" />
+              <NInput
+                v-if="showConfirmPassword"
+                v-model:value="confirmPassword"
+                type="password"
+                :placeholder="$t('common.passwordConfirm')"
+                class="mb-4"
+                :status="confirmPasswordStatus"
+              />
+              <div style="display: flex; justify-content: space-between; ">
+                <NInput
+                  v-model:value="verificationCode"
+                  maxlength="4"
+                  show-count
+                  clearable
+                  :allow-input="onlyAllowNumber"
+                  type="text"
+                  :placeholder="$t('common.verificationCode')"
+                  class="mb-4"
+                  :status="confirmPasswordStatus"
+                />
+                <NButton type="primary" :loading="sendLoading" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode">
+                  {{ $t('common.sendVerificationCode') }}
+                </NButton>
+              </div>
+              <NButton block type="primary" :disabled="disabled || password !== confirmPassword" :loading="loading" @click="handleRegister">
+                {{ $t('common.register') }}
+              </NButton>
+            </NTabPane>
+
+            <!--
             <NTabPane name="login" :tab="$t('common.login')">
               <NInput v-model:value="username" type="text" :placeholder="$t('common.email')" class="mb-2" />
               <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @keypress="handlePress" />
@@ -248,6 +318,7 @@ async function handleResetPassword() {
                 {{ $t('common.resetPassword') }}
               </NButton>
             </NTabPane>
+            -->
           </NTabs>
         <!-- End Tabs -->
         </div>

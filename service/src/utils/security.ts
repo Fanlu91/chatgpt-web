@@ -64,6 +64,13 @@ export async function getUserResetPasswordUrl(username: string) {
   return `${config.siteConfig.siteDomain}/#/chat/?verifyresetpassword=${sign}`
 }
 
+// // 生成随机4位数字用于登录验证
+// export async function getUserVerificationCode(username: string) {
+//   const u = username
+//   const code = Math.floor(Math.random() * 9000 + 1000)
+//   return code
+// }
+
 function getUserResetPassword(username: string) {
   return getVerify(username, '|rp')
 }

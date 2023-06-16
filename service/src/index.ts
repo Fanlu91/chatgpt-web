@@ -17,6 +17,7 @@ import {
   deleteChat,
   deleteChatRoom,
   existsChatRoom,
+  generateVerificationCode,
   getChat,
   getChatRoom,
   getChatRooms,
@@ -25,6 +26,7 @@ import {
   getUserById,
   getUserStatisticsByDay,
   getUsers,
+  getVerificationCode,
   insertChat,
   insertChatUsage,
   renameChatRoom,
@@ -42,10 +44,11 @@ import {
   verifyUser,
 } from './storage/mongo'
 import { authLimiter, limiter } from './middleware/limiter'
-import { hasAnyRole, isEmail, isNotEmptyString } from './utils/is'
+import { hasAnyRole, isEmail, isNotEmptyString, isPhoneNumber } from './utils/is'
 import { sendNoticeMail, sendResetPasswordMail, sendTestMail, sendVerifyMail, sendVerifyMailAdmin } from './utils/mail'
 import { checkUserResetPassword, checkUserVerify, checkUserVerifyAdmin, getUserResetPasswordUrl, getUserVerifyUrl, getUserVerifyUrlAdmin, md5 } from './utils/security'
 import { rootAuth } from './middleware/rootAuth'
+import { sendRegisterSms } from './utils/phone'
 
 dotenv.config()
 
@@ -502,6 +505,39 @@ router.post('/chat-abort', [auth, limiter], async (req, res) => {
   }
 })
 
+router.post('/register', authLimiter, async (req, res) => {
+  try {
+    const config = await getCacheConfig()
+    if (!config.siteConfig.registerEnabled)
+      throw new Error('注册账号功能未启用')
+    // console.log(req.body)
+    const { username, verificationCode, password } = req.body as { username: string; verificationCode: string; password: string }
+    if (!username || !isPhoneNumber(username))
+      throw new Error('请输入格式正确的手机号')
+
+    const user = await getUser(username)
+    if (user != null)
+      throw new Error('该手机号已注册，请直接登录')
+
+    const existingCode = await getVerificationCode(username, verificationCode)
+    console.log(existingCode)
+    if (!existingCode)
+      throw new Error('验证码错误')
+
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+    if (existingCode.createdAt < tenMinutesAgo)
+      throw new Error('验证码已过期')
+
+    // continue registration
+    const newPassword = md5(password)
+    await createUser(username, newPassword)
+    res.send({ status: 'Success', message: '注册成功，请与管理员沟通进行验证', data: null })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+})
+
 router.post('/user-register', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body as { username: string; password: string }
@@ -676,6 +712,30 @@ router.post('/user-send-reset-mail', authLimiter, async (req, res) => {
       throw new Error('账户状态异常 | Account status abnormal.')
     await sendResetPasswordMail(username, await getUserResetPasswordUrl(username))
     res.send({ status: 'Success', message: '重置邮件已发送 | Reset email has been sent', data: null })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+})
+
+router.post('/user-send-verification-code', authLimiter, async (req, res) => {
+  try {
+    const { phone } = req.body as { phone: string }
+    if (!phone || !isPhoneNumber(phone))
+      throw new Error('请输入格式正确的手机号')
+
+    const user = await getUser(phone)
+    if (user != null)
+      throw new Error('该手机号已注册，请直接登录')
+    // getUserVerificationCode
+    const verificationCode = await generateVerificationCode(phone)
+    try {
+      await sendRegisterSms(phone, verificationCode.code)
+      res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
+    }
+    catch (err) {
+      res.send({ status: 'Fail', message: err, data: null })
+    }
   }
   catch (error) {
     res.send({ status: 'Fail', message: error.message, data: null })

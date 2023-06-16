@@ -258,3 +258,17 @@ export class KeyConfig {
 }
 
 export type APIMODEL = 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
+
+export class VerificationCode {
+  _id: ObjectId
+  phoneNumber: string
+  code: string
+  createdAt: Date
+  updatedAt: Date
+  constructor(phoneNumber: string, code: string) {
+    this.phoneNumber = phoneNumber
+    this.code = code
+    this.createdAt = new Date()
+    this.updatedAt = new Date()
+  }
+}

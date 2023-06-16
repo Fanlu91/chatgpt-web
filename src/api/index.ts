@@ -107,6 +107,13 @@ export function fetchSendResetMail<T = any>(username: string) {
   })
 }
 
+export function fetchSendVerificationCode<T = any>(phone: string) {
+  return post<T>({
+    url: '/user-send-verification-code',
+    data: { phone },
+  })
+}
+
 export function fetchResetPassword<T = any>(username: string, password: string, sign: string) {
   return post<T>({
     url: '/user-reset-password',
@@ -114,10 +121,17 @@ export function fetchResetPassword<T = any>(username: string, password: string, 
   })
 }
 
-export function fetchRegister<T = any>(username: string, password: string) {
+export function fetchUserRegister<T = any>(username: string, password: string) {
   return post<T>({
     url: '/user-register',
     data: { username, password },
+  })
+}
+
+export function fetchRegister<T = any>(username: string, password: string, verificationCode: string) {
+  return post<T>({
+    url: '/register',
+    data: { username, password, verificationCode },
   })
 }
 

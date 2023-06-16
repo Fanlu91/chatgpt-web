@@ -1,7 +1,7 @@
 import { MongoClient, ObjectId } from 'mongodb'
 import * as dotenv from 'dotenv'
 import dayjs from 'dayjs'
-import { ChatInfo, ChatRoom, ChatUsage, Status, UserConfig, UserInfo, UserRole } from './model'
+import { ChatInfo, ChatRoom, ChatUsage, Status, UserConfig, UserInfo, UserRole, VerificationCode } from './model'
 import type { CHATMODEL, ChatOptions, Config, KeyConfig, UsageResponse } from './model'
 
 dotenv.config()
@@ -16,7 +16,32 @@ const userCol = client.db(dbName).collection('user')
 const configCol = client.db(dbName).collection('config')
 const usageCol = client.db(dbName).collection('chat_usage')
 const keyCol = client.db(dbName).collection('key_config')
+const verificationCol = client.db(dbName).collection('verification_code')
 
+export async function insertVerificationCode(uuid: number, phoneNumber: string, code: string) {
+  const verificationCode = new VerificationCode(phoneNumber, code)
+  await verificationCol.insertOne(verificationCode)
+  return verificationCode
+}
+
+// 生成验证码并存在mongoDB中
+export async function generateVerificationCode(phoneNumber: string): Promise<VerificationCode> {
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+  const existingCode = await verificationCol.findOne({ phoneNumber, createdAt: { $gte: tenMinutesAgo } })
+  if (existingCode)
+    return new VerificationCode(existingCode.phoneNumber, existingCode.code)
+
+  const newCode = new VerificationCode(phoneNumber, Math.floor(1000 + Math.random() * 9000).toString())
+  await verificationCol.insertOne(newCode)
+
+  return newCode
+}
+
+export async function getVerificationCode(phoneNumber: string, code: string) {
+  const verificationCode = await verificationCol.findOne({ phoneNumber, code }) as VerificationCode
+  console.log(verificationCode)
+  return verificationCode
+}
 /**
  * 插入聊天信息
  * @param uuid
@@ -189,7 +214,7 @@ export async function deleteChat(roomId: number, uuid: number, inversion: boolea
   await chatCol.updateOne(query, update)
 }
 
-export async function createUser(email: string, password: string, isRoot: boolean): Promise<UserInfo> {
+export async function createUser(email: string, password: string, isRoot?: boolean): Promise<UserInfo> {
   email = email.toLowerCase()
   const userInfo = new UserInfo(email, password)
   if (isRoot) {
