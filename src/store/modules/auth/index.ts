@@ -26,12 +26,14 @@ interface SessionResponse {
 export interface AuthState {
   token: string | undefined
   session: SessionResponse | null
+  cooldown: number
 }
 
 export const useAuthStore = defineStore('auth-store', {
   state: (): AuthState => ({
     token: getToken(),
     session: null,
+    cooldown: 0,
   }),
 
   getters: {
@@ -45,6 +47,16 @@ export const useAuthStore = defineStore('auth-store', {
   },
 
   actions: {
+    startCooldown() {
+      this.cooldown = 60
+      const timerId = setInterval(() => {
+        if (this.cooldown > 0)
+          this.cooldown--
+        else
+          clearInterval(timerId)
+      }, 1000)
+    },
+
     async getSession() {
       try {
         const { data } = await fetchSession<SessionResponse>()

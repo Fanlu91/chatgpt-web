@@ -22,7 +22,18 @@ const limiter = rateLimit({
     return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
   },
   message: async (req, res) => {
-    res.send({ status: 'Fail', message: 'Too many request from this IP in 1 hour', data: null })
+    res.send({ status: 'Fail', message: '"1小时内来自该IP的对话请求过多 | Too many chat request from this IP in 1 hour', data: null })
+  },
+})
+const verificationLimiter = rateLimit({
+  windowMs: 60 * 1000, // Maximum number of accesses within an hour
+  max: 1,
+  statusCode: 200,
+  keyGenerator: (req, _) => {
+    return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
+  },
+  message: async (req, res) => {
+    res.send({ status: 'Fail', message: '"1分钟内只能发送1次验证码 | Too many request from this IP in 1 minute', data: null })
   },
 })
 const authLimiter = rateLimit({
@@ -33,8 +44,8 @@ const authLimiter = rateLimit({
     return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
   },
   message: async (req, res) => {
-    res.send({ status: 'Fail', message: 'About Auth limiter, Too many request from this IP in 1 minute', data: null })
+    res.send({ status: 'Fail', message: '1分钟内来自该IP的授权请求过多 | Too many auth request from this IP in 1 minute', data: null })
   },
 })
 
-export { limiter, authLimiter }
+export { limiter, authLimiter, verificationLimiter }

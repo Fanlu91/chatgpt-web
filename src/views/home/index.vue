@@ -159,6 +159,8 @@ async function handleSendVerificationCode() {
     sendLoading.value = true
     const result = await fetchSendVerificationCode(name)
     ms.success(result.message as string)
+    if (result.status === 'Success')
+      authStore.startCooldown()
   }
   catch (error: any) {
     ms.error(error.message ?? 'error')
@@ -245,8 +247,12 @@ async function handleResetPassword() {
                   class="mb-4"
                   :status="confirmPasswordStatus"
                 />
-                <NButton type="primary" :loading="sendLoading" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode">
+
+                <!-- <NButton type="primary" :loading="sendLoading" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode">
                   {{ $t('common.sendVerificationCode') }}
+                </NButton> -->
+                <NButton type="primary" :loading="sendLoading" :disabled="authStore.cooldown > 0" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode">
+                  {{ authStore.cooldown > 0 ? `${authStore.cooldown}秒后重新发送` : $t('common.sendVerificationCode') }}
                 </NButton>
               </div>
               <NButton block type="primary" :disabled="disabled || password !== confirmPassword" :loading="loading" @click="handleRegister">
@@ -255,15 +261,6 @@ async function handleResetPassword() {
             </NTabPane>
 
             <!--
-            <NTabPane name="login" :tab="$t('common.login')">
-              <NInput v-model:value="username" type="text" :placeholder="$t('common.email')" class="mb-2" />
-              <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @keypress="handlePress" />
-
-              <NButton block type="primary" :disabled="disabled" :loading="loading" @click="handleLogin">
-                {{ $t('common.login') }}
-              </NButton>
-            </NTabPane>
-
             <NTabPane v-if="authStore.session && authStore.session.allowRegister" name="register" :tab="$t('common.register')">
               <NInput v-model:value="username" type="text" :placeholder="$t('common.email')" class="mb-2" />
               <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @input="handlePasswordInput" />

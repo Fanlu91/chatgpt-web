@@ -71,7 +71,7 @@ export async function sendSms(phoneNumber: string, code: string, templateId: str
   }
   return new Promise((resolve, reject) => {
     client.SendSms(params, (err: any, response: any) => {
-      console.log('sendSms', err, response)
+      // console.log('sendSms', err, response, code)
       if (err || response.SendStatusSet[0].Code !== 'Ok') {
         const errorMsg = err || response.SendStatusSet[0].Message
         console.error(`Failed to send SMS: ${errorMsg}`)

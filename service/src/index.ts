@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import * as dotenv from 'dotenv'
 import { ObjectId } from 'mongodb'
 import type { RequestProps } from './types'
-import type { ChatContext, ChatMessage } from './chatgpt'
+import type { ChatMessage } from './chatgpt'
 import { abortChatProcess, chatConfig, chatReplyProcess, containsSensitiveWords, initAuditService } from './chatgpt'
 import { auth, getUserId } from './middleware/auth'
 import { clearApiKeyCache, clearConfigCache, getApiKeys, getCacheApiKeys, getCacheConfig, getOriginConfig } from './storage/config'
@@ -43,7 +43,7 @@ import {
   upsertKey,
   verifyUser,
 } from './storage/mongo'
-import { authLimiter, limiter } from './middleware/limiter'
+import { authLimiter, limiter, verificationLimiter } from './middleware/limiter'
 import { hasAnyRole, isEmail, isNotEmptyString, isPhoneNumber } from './utils/is'
 import { sendNoticeMail, sendResetPasswordMail, sendTestMail, sendVerifyMail, sendVerifyMailAdmin } from './utils/mail'
 import { checkUserResetPassword, checkUserVerify, checkUserVerifyAdmin, getUserResetPasswordUrl, getUserVerifyUrl, getUserVerifyUrlAdmin, md5 } from './utils/security'
@@ -338,46 +338,6 @@ router.post('/chat-clear', auth, async (req, res) => {
   }
 })
 
-router.post('/chat', auth, async (req, res) => {
-  try {
-    const { roomId, uuid, regenerate, prompt, options = {} } = req.body as
-      { roomId: number; uuid: number; regenerate: boolean; prompt: string; options?: ChatContext }
-    const message = regenerate
-      ? await getChat(roomId, uuid)
-      : await insertChat(uuid, prompt, roomId, options as ChatOptions)
-    const response = await chatReply(prompt, options)
-    if (response.status === 'Success') {
-      if (regenerate && message.options.messageId) {
-        const previousResponse = message.previousResponse || []
-        previousResponse.push({ response: message.response, options: message.options })
-        await updateChat(message._id as unknown as string,
-          response.data.text,
-          response.data.id,
-          response.data.detail?.usage as UsageResponse,
-          previousResponse as [])
-      }
-      else {
-        await updateChat(message._id as unknown as string,
-          response.data.text,
-          response.data.id,
-          response.data.detail?.usage as UsageResponse)
-      }
-
-      if (response.data.usage) {
-        await insertChatUsage(new ObjectId(req.headers.userId as string),
-          roomId,
-          message._id,
-          response.data.id,
-          response.data.detail?.usage as UsageResponse)
-      }
-    }
-    res.send(response)
-  }
-  catch (error) {
-    res.send(error)
-  }
-})
-
 router.post('/chat-process', [auth, limiter], async (req, res) => {
   res.setHeader('Content-type', 'application/octet-stream')
 
@@ -531,7 +491,7 @@ router.post('/register', authLimiter, async (req, res) => {
     // continue registration
     const newPassword = md5(password)
     await createUser(username, newPassword)
-    res.send({ status: 'Success', message: '注册成功，请与管理员沟通进行验证', data: null })
+    res.send({ status: 'Success', message: '注册成功。', data: null })
   }
   catch (error) {
     res.send({ status: 'Fail', message: error.message, data: null })
@@ -680,7 +640,7 @@ router.post('/user-login', authLimiter, async (req, res) => {
     if (user == null || user.password !== md5(password))
       throw new Error('用户不存在或密码错误 | User does not exist or incorrect password.')
     if (user.status === Status.PreVerify)
-      throw new Error('请等待管理员验证开通 | Please wait for the admin to activate')
+      throw new Error('注册信息验证成功。很抱歉，本站目前不向公众提供服务。')
     if (user != null && user.status === Status.AdminVerify)
       throw new Error('请等待管理员开通 | Please wait for the admin to activate')
     if (user.status !== Status.Normal)
@@ -720,7 +680,9 @@ router.post('/user-send-reset-mail', authLimiter, async (req, res) => {
   }
 })
 
-router.post('/user-send-verification-code', authLimiter, async (req, res) => {
+const sendVerificationCodeCooldown = {}
+
+router.post('/user-send-verification-code', verificationLimiter, async (req, res) => {
   try {
     const { phone } = req.body as { phone: string }
     if (!phone || !isPhoneNumber(phone))
@@ -729,12 +691,25 @@ router.post('/user-send-verification-code', authLimiter, async (req, res) => {
     const user = await getUser(phone)
     if (user != null)
       throw new Error('该手机号已注册，请直接登录')
+
+    if (sendVerificationCodeCooldown[phone] && Date.now() - sendVerificationCodeCooldown[phone] < 60000)
+      throw new Error('1分钟之内不能重复发送验证码')
+
     // getUserVerificationCode
     const verificationCode = await generateVerificationCode(phone)
     try {
-      await sendRegisterSms(phone, verificationCode.code)
-      res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
+      const response = await sendRegisterSms(phone, verificationCode.code)
+      const code = response.SendStatusSet[0].Code
+      console.log('发送短信验证码:', phone, verificationCode.code, response.SendStatusSet[0].Message, code)
+      if (code === 'Ok') {
+        sendVerificationCodeCooldown[phone] = Date.now()
+        res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
+      }
+      else {
+        res.send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
+      }
     }
+
     catch (err) {
       res.send({ status: 'Fail', message: err, data: null })
     }
@@ -849,7 +824,7 @@ router.post('/verify', authLimiter, async (req, res) => {
     if (config.siteConfig.registerReview) {
       await verifyUser(username, Status.AdminVerify)
       await sendVerifyMailAdmin(process.env.ROOT_USER, username, await getUserVerifyUrlAdmin(username))
-      message = '验证成功, 请等待管理员开通 | Verify successfully, Please wait for the admin to activate'
+      message = '注册信息验证成功。但是很抱歉，本站目前不向公众提供服务。'
     }
     else {
       await verifyUser(username, Status.Normal)
