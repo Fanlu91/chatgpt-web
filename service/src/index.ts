@@ -672,14 +672,15 @@ router.post('/session', async (req, res) => {
 router.post('/user-login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body as { username: string; password: string }
-    if (!username || !password || !isEmail(username))
+    console.log(new Date(), '登录', username)
+    if (!username || !password)
       throw new Error('用户名或密码为空 | Username or password is empty')
 
     const user = await getUser(username)
     if (user == null || user.password !== md5(password))
       throw new Error('用户不存在或密码错误 | User does not exist or incorrect password.')
     if (user.status === Status.PreVerify)
-      throw new Error('请去邮箱中验证 | Please verify in the mailbox')
+      throw new Error('请等待管理员验证开通 | Please wait for the admin to activate')
     if (user != null && user.status === Status.AdminVerify)
       throw new Error('请等待管理员开通 | Please wait for the admin to activate')
     if (user.status !== Status.Normal)
@@ -687,7 +688,8 @@ router.post('/user-login', authLimiter, async (req, res) => {
 
     const config = await getCacheConfig()
     const token = jwt.sign({
-      name: user.name ? user.name : user.email,
+      name: user.nickname,
+      phone: user.phone,
       avatar: user.avatar,
       description: user.description,
       userId: user._id,
@@ -764,13 +766,13 @@ router.post('/user-reset-password', authLimiter, async (req, res) => {
 
 router.post('/user-info', auth, async (req, res) => {
   try {
-    const { name, avatar, description } = req.body as UserInfo
+    const { nickname, avatar, description } = req.body as UserInfo
     const userId = req.headers.userId.toString()
 
     const user = await getUserById(userId)
     if (user == null || user.status !== Status.Normal)
       throw new Error('用户不存在 | User does not exist.')
-    await updateUserInfo(userId, { name, avatar, description } as UserInfo)
+    await updateUserInfo(userId, { nickname, avatar, description } as UserInfo)
     res.send({ status: 'Success', message: '更新成功 | Update successfully' })
   }
   catch (error) {

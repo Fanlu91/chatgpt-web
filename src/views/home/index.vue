@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NInput, NModal, NTabPane, NTabs, useMessage } from 'naive-ui'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendResetMail, fetchSendVerificationCode, fetchVerify, fetchVerifyAdmin } from '@/api'
+import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendVerificationCode, fetchVerify, fetchVerifyAdmin } from '@/api'
 import { useAuthStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
@@ -165,25 +165,6 @@ async function handleSendVerificationCode() {
   }
   finally {
     sendLoading.value = false
-  }
-}
-
-async function handleSendResetMail() {
-  const name = username.value.trim()
-
-  if (!name)
-    return
-
-  try {
-    loading.value = true
-    const result = await fetchSendResetMail(name)
-    ms.success(result.message as string)
-  }
-  catch (error: any) {
-    ms.error(error.message ?? 'error')
-  }
-  finally {
-    loading.value = false
   }
 }
 
