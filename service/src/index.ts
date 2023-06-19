@@ -44,9 +44,9 @@ import {
   verifyUser,
 } from './storage/mongo'
 import { authLimiter, limiter, verificationLimiter } from './middleware/limiter'
-import { hasAnyRole, isEmail, isNotEmptyString, isPhoneNumber } from './utils/is'
-import { sendNoticeMail, sendResetPasswordMail, sendTestMail, sendVerifyMail, sendVerifyMailAdmin } from './utils/mail'
-import { checkUserResetPassword, checkUserVerify, checkUserVerifyAdmin, getUserResetPasswordUrl, getUserVerifyUrl, getUserVerifyUrlAdmin, md5 } from './utils/security'
+import { hasAnyRole, isEmail, isNotEmptyString, isPhoneNumber, isValidPassword } from './utils/is'
+import { sendNoticeMail, sendResetPasswordMail, sendTestMail, sendVerifyMailAdmin } from './utils/mail'
+import { checkUserResetPassword, checkUserVerify, checkUserVerifyAdmin, getUserResetPasswordUrl, getUserVerifyUrlAdmin, md5 } from './utils/security'
 import { rootAuth } from './middleware/rootAuth'
 import { sendRegisterSms } from './utils/phone'
 
@@ -479,6 +479,9 @@ router.post('/register', authLimiter, async (req, res) => {
     if (user != null)
       throw new Error('该手机号已注册，请直接登录')
 
+    if (!password || !isValidPassword(password))
+      throw new Error('密码太简单啦。建议最少6位且同时包含数字和字母')
+
     const existingCode = await getVerificationCode(username, verificationCode)
     console.log(existingCode)
     if (!existingCode)
@@ -492,61 +495,6 @@ router.post('/register', authLimiter, async (req, res) => {
     const newPassword = md5(password)
     await createUser(username, newPassword)
     res.send({ status: 'Success', message: '注册成功。', data: null })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
-
-router.post('/user-register', authLimiter, async (req, res) => {
-  try {
-    const { username, password } = req.body as { username: string; password: string }
-    const config = await getCacheConfig()
-    if (!config.siteConfig.registerEnabled) {
-      res.send({ status: 'Fail', message: '注册账号功能未启用 | Register account is disabled!', data: null })
-      return
-    }
-    if (!isEmail(username)) {
-      res.send({ status: 'Fail', message: '请输入正确的邮箱 | Please enter a valid email address.', data: null })
-      return
-    }
-    if (isNotEmptyString(config.siteConfig.registerMails)) {
-      let allowSuffix = false
-      const emailSuffixs = config.siteConfig.registerMails.split(',')
-      for (let index = 0; index < emailSuffixs.length; index++) {
-        const element = emailSuffixs[index]
-        allowSuffix = username.toLowerCase().endsWith(element)
-        if (allowSuffix)
-          break
-      }
-      if (!allowSuffix) {
-        res.send({ status: 'Fail', message: '该邮箱后缀不支持 | The email service provider is not allowed', data: null })
-        return
-      }
-    }
-
-    const user = await getUser(username)
-    if (user != null) {
-      if (user.status === Status.PreVerify) {
-        await sendVerifyMail(username, await getUserVerifyUrl(username))
-        throw new Error('请去邮箱中验证 | Please verify in the mailbox')
-      }
-      if (user.status === Status.AdminVerify)
-        throw new Error('请等待管理员开通 | Please wait for the admin to activate')
-      res.send({ status: 'Fail', message: '账号已存在 | The email exists', data: null })
-      return
-    }
-    const newPassword = md5(password)
-    const isRoot = username.toLowerCase() === process.env.ROOT_USER
-    await createUser(username, newPassword, isRoot)
-
-    if (isRoot) {
-      res.send({ status: 'Success', message: '注册成功 | Register success', data: null })
-    }
-    else {
-      await sendVerifyMail(username, await getUserVerifyUrl(username))
-      res.send({ status: 'Success', message: '注册成功, 去邮箱中验证吧 | Registration is successful, you need to go to email verification', data: null })
-    }
   }
   catch (error) {
     res.send({ status: 'Fail', message: error.message, data: null })

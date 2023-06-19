@@ -30,6 +30,12 @@ export function isPhoneNumber(value: any): boolean {
   return isNotEmptyString(value) && /^1(3\d|4[5-9]|5[0-35-9]|6[2567]|7[0-8]|8\d|9[0-35-9])\d{8}$/.test(value)
 }
 
+// 至少6位，且有数字和字母
+export function isValidPassword(value: any): boolean {
+  const regex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/
+  return regex.test(value)
+}
+
 export function isTextAuditServiceProvider(value: any): value is TextAuditServiceProvider {
   return value === 'baidu' // || value === 'ali'
 }
