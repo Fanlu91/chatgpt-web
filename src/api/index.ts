@@ -79,19 +79,19 @@ export function fetchSession<T>() {
   })
 }
 
-export function fetchVerify<T>(token: string) {
-  return post<T>({
-    url: '/verify',
-    data: { token },
-  })
-}
+// export function fetchVerify<T>(token: string) {
+//   return post<T>({
+//     url: '/verify',
+//     data: { token },
+//   })
+// }
 
-export function fetchVerifyAdmin<T>(token: string) {
-  return post<T>({
-    url: '/verifyadmin',
-    data: { token },
-  })
-}
+// export function fetchVerifyAdmin<T>(token: string) {
+//   return post<T>({
+//     url: '/verifyadmin',
+//     data: { token },
+//   })
+// }
 
 export function fetchLogin<T = any>(username: string, password: string) {
   return post<T>({
@@ -100,17 +100,17 @@ export function fetchLogin<T = any>(username: string, password: string) {
   })
 }
 
-export function fetchSendResetMail<T = any>(username: string) {
-  return post<T>({
-    url: '/user-send-reset-mail',
-    data: { username },
-  })
-}
+// export function fetchSendResetMail<T = any>(username: string) {
+//   return post<T>({
+//     url: '/user-send-reset-mail',
+//     data: { username },
+//   })
+// }
 
-export function fetchSendVerificationCode<T = any>(phone: string) {
+export function fetchSendVerificationCode<T = any>(phone: string, existingUser?: boolean) {
   return post<T>({
     url: '/user-send-verification-code',
-    data: { phone },
+    data: { phone, existingUser },
   })
 }
 

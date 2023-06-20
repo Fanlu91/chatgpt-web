@@ -26,7 +26,6 @@ import {
   getUserById,
   getUserStatisticsByDay,
   getUsers,
-  getVerificationCode,
   insertChat,
   insertChatUsage,
   renameChatRoom,
@@ -41,12 +40,11 @@ import {
   updateUserRole,
   updateUserStatus,
   upsertKey,
-  verifyUser,
 } from './storage/mongo'
 import { authLimiter, limiter, verificationLimiter } from './middleware/limiter'
-import { hasAnyRole, isEmail, isNotEmptyString, isPhoneNumber, isValidPassword } from './utils/is'
-import { sendNoticeMail, sendResetPasswordMail, sendTestMail, sendVerifyMailAdmin } from './utils/mail'
-import { checkUserResetPassword, checkUserVerify, checkUserVerifyAdmin, getUserResetPasswordUrl, getUserVerifyUrlAdmin, md5 } from './utils/security'
+import { hasAnyRole, isNotEmptyString, isPhoneNumber, isValidPassword } from './utils/is'
+import { sendNoticeMail, sendTestMail } from './utils/mail'
+import { md5, validateVerificationCode } from './utils/security'
 import { rootAuth } from './middleware/rootAuth'
 import { sendRegisterSms } from './utils/phone'
 
@@ -480,17 +478,10 @@ router.post('/register', authLimiter, async (req, res) => {
       throw new Error('该手机号已注册，请直接登录')
 
     if (!password || !isValidPassword(password))
-      throw new Error('密码太简单啦。建议最少6位且同时包含数字和字母')
+      throw new Error('密码太简单啦。建议最少6位且需同时包含数字和字母')
 
-    const existingCode = await getVerificationCode(username, verificationCode)
-    console.log(existingCode)
-    if (!existingCode)
-      throw new Error('验证码错误')
-
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-    if (existingCode.createdAt < tenMinutesAgo)
-      throw new Error('验证码已过期')
-
+    // 验证码校验
+    await validateVerificationCode(username, verificationCode)
     // continue registration
     const newPassword = md5(password)
     await createUser(username, newPassword)
@@ -611,44 +602,53 @@ router.post('/user-login', authLimiter, async (req, res) => {
   }
 })
 
-router.post('/user-send-reset-mail', authLimiter, async (req, res) => {
-  try {
-    const { username } = req.body as { username: string }
-    if (!username || !isEmail(username))
-      throw new Error('请输入格式正确的邮箱 | Please enter a correctly formatted email address.')
+// router.post('/user-send-reset-mail', authLimiter, async (req, res) => {
+//   try {
+//     const { username } = req.body as { username: string }
+//     if (!username || !isEmail(username))
+//       throw new Error('请输入格式正确的邮箱 | Please enter a correctly formatted email address.')
 
-    const user = await getUser(username)
-    if (user == null || user.status !== Status.Normal)
-      throw new Error('账户状态异常 | Account status abnormal.')
-    await sendResetPasswordMail(username, await getUserResetPasswordUrl(username))
-    res.send({ status: 'Success', message: '重置邮件已发送 | Reset email has been sent', data: null })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
+//     const user = await getUser(username)
+//     if (user == null || user.status !== Status.Normal)
+//       throw new Error('账户状态异常 | Account status abnormal.')
+//     await sendResetPasswordMail(username, await getUserResetPasswordUrl(username))
+//     res.send({ status: 'Success', message: '重置邮件已发送 | Reset email has been sent', data: null })
+//   }
+//   catch (error) {
+//     res.send({ status: 'Fail', message: error.message, data: null })
+//   }
+// })
 
 const sendVerificationCodeCooldown = {}
 
 router.post('/user-send-verification-code', verificationLimiter, async (req, res) => {
   try {
     const { phone } = req.body as { phone: string }
+    // 如果是已注册用户，需要提供 existingUser: true
+    const { existingUser } = req.body as { existingUser: boolean }
+
     if (!phone || !isPhoneNumber(phone))
       throw new Error('请输入格式正确的手机号')
 
     const user = await getUser(phone)
-    if (user != null)
-      throw new Error('该手机号已注册，请直接登录')
+    if (existingUser) {
+      if (user == null)
+        throw new Error('您不是本站用户')
+    }
+    else {
+      if (user != null)
+        throw new Error('该手机号已注册，请直接登录')
+    }
 
     if (sendVerificationCodeCooldown[phone] && Date.now() - sendVerificationCodeCooldown[phone] < 60000)
       throw new Error('1分钟之内不能重复发送验证码')
 
     // getUserVerificationCode
     const verificationCode = await generateVerificationCode(phone)
+    console.log('生成短信验证码:', phone, verificationCode.code)
     try {
       const response = await sendRegisterSms(phone, verificationCode.code)
       const code = response.SendStatusSet[0].Code
-      console.log('发送短信验证码:', phone, verificationCode.code, response.SendStatusSet[0].Message, code)
       if (code === 'Ok') {
         sendVerificationCodeCooldown[phone] = Date.now()
         res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
@@ -657,9 +657,9 @@ router.post('/user-send-verification-code', verificationLimiter, async (req, res
         res.send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
       }
     }
-
     catch (err) {
-      res.send({ status: 'Fail', message: err, data: null })
+      console.error('发送短信验证码失败:', err)
+      res.send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
     }
   }
   catch (error) {
@@ -670,10 +670,12 @@ router.post('/user-send-verification-code', verificationLimiter, async (req, res
 router.post('/user-reset-password', authLimiter, async (req, res) => {
   try {
     const { username, password, sign } = req.body as { username: string; password: string; sign: string }
-    if (!username || !password || !isEmail(username))
+    if (!username || !password)
       throw new Error('用户名或密码为空 | Username or password is empty')
-    if (!sign || !checkUserResetPassword(sign, username))
-      throw new Error('链接失效, 请重新发送 | The link is invalid, please resend.')
+
+    // 验证码校验
+    await validateVerificationCode(username, sign)
+
     const user = await getUser(username)
     if (user == null || user.status !== Status.Normal)
       throw new Error('账户状态异常 | Account status abnormal.')
@@ -756,53 +758,53 @@ router.post('/user-role', rootAuth, async (req, res) => {
   }
 })
 
-router.post('/verify', authLimiter, async (req, res) => {
-  try {
-    const { token } = req.body as { token: string }
-    if (!token)
-      throw new Error('Secret key is empty')
-    const username = await checkUserVerify(token)
-    const user = await getUser(username)
-    if (user != null && user.status === Status.Normal) {
-      res.send({ status: 'Fail', message: '账号已存在 | The email exists', data: null })
-      return
-    }
-    const config = await getCacheConfig()
-    let message = '验证成功 | Verify successfully'
-    if (config.siteConfig.registerReview) {
-      await verifyUser(username, Status.AdminVerify)
-      await sendVerifyMailAdmin(process.env.ROOT_USER, username, await getUserVerifyUrlAdmin(username))
-      message = '注册信息验证成功。但是很抱歉，本站目前不向公众提供服务。'
-    }
-    else {
-      await verifyUser(username, Status.Normal)
-    }
-    res.send({ status: 'Success', message, data: null })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
+// router.post('/verify', authLimiter, async (req, res) => {
+//   try {
+//     const { token } = req.body as { token: string }
+//     if (!token)
+//       throw new Error('Secret key is empty')
+//     const username = await checkUserVerify(token)
+//     const user = await getUser(username)
+//     if (user != null && user.status === Status.Normal) {
+//       res.send({ status: 'Fail', message: '账号已存在 | The email exists', data: null })
+//       return
+//     }
+//     const config = await getCacheConfig()
+//     let message = '验证成功 | Verify successfully'
+//     if (config.siteConfig.registerReview) {
+//       await verifyUser(username, Status.AdminVerify)
+//       await sendVerifyMailAdmin(process.env.ROOT_USER, username, await getUserVerifyUrlAdmin(username))
+//       message = '注册信息验证成功。但是很抱歉，本站目前不向公众提供服务。'
+//     }
+//     else {
+//       await verifyUser(username, Status.Normal)
+//     }
+//     res.send({ status: 'Success', message, data: null })
+//   }
+//   catch (error) {
+//     res.send({ status: 'Fail', message: error.message, data: null })
+//   }
+// })
 
-router.post('/verifyadmin', authLimiter, async (req, res) => {
-  try {
-    const { token } = req.body as { token: string }
-    if (!token)
-      throw new Error('Secret key is empty')
-    const username = await checkUserVerifyAdmin(token)
-    const user = await getUser(username)
-    if (user != null && user.status === Status.Normal) {
-      res.send({ status: 'Fail', message: '账户已开通 | The email has been opened.', data: null })
-      return
-    }
-    await verifyUser(username, Status.Normal)
-    await sendNoticeMail(username)
-    res.send({ status: 'Success', message: '账户已激活 | Account has been activated.', data: null })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
+// router.post('/verifyadmin', authLimiter, async (req, res) => {
+//   try {
+//     const { token } = req.body as { token: string }
+//     if (!token)
+//       throw new Error('Secret key is empty')
+//     const username = await checkUserVerifyAdmin(token)
+//     const user = await getUser(username)
+//     if (user != null && user.status === Status.Normal) {
+//       res.send({ status: 'Fail', message: '账户已开通 | The email has been opened.', data: null })
+//       return
+//     }
+//     await verifyUser(username, Status.Normal)
+//     await sendNoticeMail(username)
+//     res.send({ status: 'Success', message: '账户已激活 | Account has been activated.', data: null })
+//   }
+//   catch (error) {
+//     res.send({ status: 'Fail', message: error.message, data: null })
+//   }
+// })
 
 router.post('/setting-base', rootAuth, async (req, res) => {
   try {
