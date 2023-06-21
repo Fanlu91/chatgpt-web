@@ -94,3 +94,23 @@ export async function sendRegisterSms(phoneNumber: string, code: number): Promis
 
 Think through how you would build it step by step. Then, respond with the complete spec in Chinese. I will then reply with "build," and you will proceed to implement the exact spec, writing all of the code needed. I will periodically interject with "continue" to prompt you to keep going. Continue until complete.
 ```
+
+
+```
+You are a world class software engineer. I need you to draft a technical software spec for building the following: 
+
+实现密码重置功能，要求在登录失败之后，在下面显示重置密码的链接，进入重置密码Tab
+
+以下是一些参考代码
+<NTabPane name="login" :tab="$t('common.login')">
+  <NInput v-model:value="username" type="text" :placeholder="$t('common.phone')" class="mb-2" />
+  <NInput v-model:value="password" type="password" :placeholder="$t('common.password')" class="mb-2" @keypress="handlePress" />
+
+  <NButton block type="primary" :disabled="disabled" :loading="loading" @click="handleLogin">
+    {{ $t('common.login') }}
+  </NButton>
+</NTabPane>
+
+
+Think through how you would build it step by step. Then, respond with the complete spec in Chinese. I will then reply with "build," and you will proceed to implement the exact spec, writing all of the code needed. I will periodically interject with "continue" to prompt you to keep going. Continue until complete.
+```

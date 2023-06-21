@@ -5,16 +5,15 @@ import { useRoute } from 'vue-router'
 import { useAuthStore, useUserStore } from '@/store'
 import defaultAvatar from '@/assets/avatar.jpg'
 import { isString } from '@/utils/is'
-import Permission from '@/views/chat/layout/Permission.vue'
-import { useBasicLayout } from '@/hooks/useBasicLayout'
+// import { useBasicLayout } from '@/hooks/useBasicLayout'
 
 const route = useRoute()
 const userStore = useUserStore()
 const authStore = useAuthStore()
-const { isMobile } = useBasicLayout()
+// const { isMobile } = useBasicLayout()
 const showPermission = ref(false)
 
-const needPermission = computed(() => !!authStore.session?.auth && !authStore.token && (isMobile.value || showPermission.value))
+// const needPermission = computed(() => !!authStore.session?.auth && !authStore.token && (isMobile.value || showPermission.value))
 
 const userInfo = computed(() => userStore.userInfo)
 
@@ -56,6 +55,6 @@ onMounted(async () => {
         </span>
       </NButton>
     </div>
-    <Permission :visible="needPermission" />
+    <!-- <Permission :visible="needPermission" /> -->
   </div>
 </template>
