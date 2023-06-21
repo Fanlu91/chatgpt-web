@@ -622,11 +622,11 @@ router.post('/user-login', authLimiter, async (req, res) => {
 const sendVerificationCodeCooldown = {}
 
 router.post('/user-send-verification-code', verificationLimiter, async (req, res) => {
-  try {
-    const { phone } = req.body as { phone: string }
-    // 如果是已注册用户，需要提供 existingUser: true
-    const { existingUser } = req.body as { existingUser: boolean }
+  const { phone } = req.body as { phone: string }
+  // 如果是已注册用户，需要提供 existingUser: true
+  const { existingUser } = req.body as { existingUser: boolean }
 
+  try {
     if (!phone || !isPhoneNumber(phone))
       throw new Error('请输入格式正确的手机号')
 
@@ -642,28 +642,30 @@ router.post('/user-send-verification-code', verificationLimiter, async (req, res
 
     if (sendVerificationCodeCooldown[phone] && Date.now() - sendVerificationCodeCooldown[phone] < 60000)
       throw new Error('1分钟之内不能重复发送验证码')
+  }
+  catch (error) {
+    res.status(403).send({ status: 'Fail', message: error.message, data: null })
+    return
+  }
 
+  try {
     // getUserVerificationCode
     const verificationCode = await generateVerificationCode(phone)
     console.log('生成短信验证码:', phone, verificationCode.code)
-    try {
-      const response = await sendRegisterSms(phone, verificationCode.code)
-      const code = response.SendStatusSet[0].Code
-      if (code === 'Ok') {
-        sendVerificationCodeCooldown[phone] = Date.now()
-        res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
-      }
-      else {
-        res.send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
-      }
+
+    const response = await sendRegisterSms(phone, verificationCode.code)
+    const code = response.SendStatusSet[0].Code
+    if (code === 'Ok') {
+      sendVerificationCodeCooldown[phone] = Date.now()
+      res.send({ status: 'Success', message: '短信验证码已发送，10分钟内有效', data: null })
     }
-    catch (err) {
-      console.error('发送短信验证码失败:', err)
-      res.send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
+    else {
+      res.status(503).send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
     }
   }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
+  catch (err) {
+    console.error('发送短信验证码失败:', err)
+    res.status(503).send({ status: 'Fail', message: '短信服务暂时不可用，请稍后重试或联系管理员', data: null })
   }
 })
 
@@ -957,5 +959,20 @@ router.post('/statistics/by-day', auth, async (req, res) => {
 
 app.use('', router)
 app.use('/api', router)
+
+app.use((err, req, res, next) => {
+  console.error(err.stack) // log the error stack trace
+  if (!res.headersSent) { // check if the headers have already been sent
+    res.status(500).send({ status: 'Fail', message: '服务器内部错误，请稍后重试或联系管理员', data: null })
+  }
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('兜底措施 Caught exception: ', err)
+})
+
+process.on('unhandledRejection', (reason, p) => {
+  console.error('兜底措施 Unhandled Rejection at: Promise ', p, ' reason: ', reason)
+})
 
 app.listen(3002, () => globalThis.console.log('Server is running on port 3002'))

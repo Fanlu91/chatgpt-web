@@ -17,11 +17,11 @@ service.interceptors.request.use(
   },
 )
 
+// axios的行为与原生的fetch API有些不同：当响应的状态码不在200-299范围内时，axios会reject promise。
 service.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     if (response.status === 200)
       return response
-
     throw new Error(response.status.toString())
   },
   (error) => {

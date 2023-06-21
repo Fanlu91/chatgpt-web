@@ -21,6 +21,7 @@ const limiter = rateLimit({
   keyGenerator: (req, _) => {
     return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
   },
+  skipFailedRequests: true,
   message: async (req, res) => {
     res.send({ status: 'Fail', message: '"最近1小时内你已经对话上百次啦，别太辛苦休息一下', data: null })
   },
@@ -29,6 +30,7 @@ const verificationLimiter = rateLimit({
   windowMs: 60 * 1000, // Maximum number of accesses within an hour
   max: 1,
   statusCode: 200,
+  skipFailedRequests: true,
   keyGenerator: (req, _) => {
     return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
   },

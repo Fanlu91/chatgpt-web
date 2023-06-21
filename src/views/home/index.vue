@@ -11,7 +11,7 @@ const visible = ref(true)
 const router = useRouter()
 const authStore = useAuthStore()
 
-const ms = useMessage()
+const showMessage = useMessage()
 
 const loading = ref(false)
 const sendLoading = ref(false)
@@ -61,11 +61,11 @@ async function handleLogin() {
     loading.value = true
     const result = await fetchLogin(name, pwd)
     await authStore.setToken(result.data.token)
-    ms.success('success')
+    showMessage.success('success')
     window.location.reload()
   }
   catch (error: any) {
-    ms.error(error.message ?? 'error')
+    showMessage.loading(error.message ?? 'error')
     password.value = ''
   }
   finally {
@@ -79,17 +79,17 @@ async function handleRegister() {
   const confirmPwd = confirmPassword.value.trim()
   const verifCode = verificationCode.value.trim()
   if (!name || !pwd || !confirmPwd || pwd !== confirmPwd) {
-    ms.error('两次输入的密码不一致 | Passwords don\'t match')
+    showMessage.loading('两次输入的密码不一致 | Passwords don\'t match')
     return
   }
 
   try {
     loading.value = true
     const result = await fetchRegister(name, pwd, verifCode)
-    ms.success(result.message as string)
+    showMessage.success(result.message as string)
   }
   catch (error: any) {
-    ms.error(error.message ?? 'error')
+    showMessage.loading(error.message ?? 'error')
   }
   finally {
     loading.value = false
@@ -98,19 +98,20 @@ async function handleRegister() {
 
 async function handleSendVerificationCode() {
   const name = username.value.trim()
-
+  // const message = undefined
   if (!name)
     return
 
   try {
     sendLoading.value = true
     const result = await fetchSendVerificationCode(name, false)
-    ms.success(result.message as string)
+    showMessage.success(result.message as string)
     if (result.status === 'Success')
       authStore.startCooldown()
   }
   catch (error: any) {
-    ms.error(error.message ?? 'error')
+    const message = error.response?.data?.message ?? 'error'
+    showMessage.loading(message)
   }
   finally {
     sendLoading.value = false
@@ -126,12 +127,12 @@ async function handleSendResetCode() {
   try {
     sendLoading.value = true
     const result = await fetchSendVerificationCode(name, true)
-    ms.success(result.message as string)
+    showMessage.success(result.message as string)
     if (result.status === 'Success')
       authStore.startCooldown()
   }
   catch (error: any) {
-    ms.error(error.message ?? 'error')
+    showMessage.loading(error.message ?? 'error')
   }
   finally {
     sendLoading.value = false
@@ -144,18 +145,18 @@ async function handleResetPassword() {
   const confirmPwd = confirmPassword.value.trim()
   const verifCode = verificationCode.value.trim()
   if (!name || !pwd || !confirmPwd || pwd !== confirmPwd) {
-    ms.error('两次输入的密码不一致 | Passwords don\'t match')
+    showMessage.loading('两次输入的密码不一致 | Passwords don\'t match')
     return
   }
 
   try {
     loading.value = true
     const result = await fetchResetPassword(name, pwd, verifCode)
-    ms.success(result.message as string)
+    showMessage.success(result.message as string)
     router.replace('/chat')
   }
   catch (error: any) {
-    ms.error(error.message ?? 'error')
+    showMessage.loading(error.message ?? 'error')
   }
   finally {
     loading.value = false
