@@ -18,12 +18,6 @@ const usageCol = client.db(dbName).collection('chat_usage')
 const keyCol = client.db(dbName).collection('key_config')
 const verificationCol = client.db(dbName).collection('verification_code')
 
-export async function insertVerificationCode(uuid: number, phoneNumber: string, code: string) {
-  const verificationCode = new VerificationCode(phoneNumber, code)
-  await verificationCol.insertOne(verificationCode)
-  return verificationCode
-}
-
 // 生成验证码并存在mongoDB中
 export async function generateVerificationCode(phoneNumber: string): Promise<VerificationCode> {
   const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
@@ -39,7 +33,7 @@ export async function generateVerificationCode(phoneNumber: string): Promise<Ver
 
 export async function getVerificationCode(phoneNumber: string, code: string) {
   const verificationCode = await verificationCol.findOne({ phoneNumber, code }) as VerificationCode
-  console.log(verificationCode)
+  // console.log(verificationCode)
   return verificationCode
 }
 /**
@@ -214,9 +208,9 @@ export async function deleteChat(roomId: number, uuid: number, inversion: boolea
   await chatCol.updateOne(query, update)
 }
 
-export async function createUser(email: string, password: string, isRoot?: boolean): Promise<UserInfo> {
-  email = email.toLowerCase()
-  const userInfo = new UserInfo(email, password)
+export async function createUser(username: string, password: string, isRoot?: boolean): Promise<UserInfo> {
+  username = username.toLowerCase()
+  const userInfo = new UserInfo(username, password)
   if (isRoot) {
     userInfo.status = Status.Normal
     userInfo.roles = [UserRole.Admin]
@@ -228,7 +222,7 @@ export async function createUser(email: string, password: string, isRoot?: boole
 
 export async function updateUserInfo(userId: string, user: UserInfo) {
   return userCol.updateOne({ _id: new ObjectId(userId) }
-    , { $set: { name: user.name, description: user.description, avatar: user.avatar } })
+    , { $set: { name: user.nickname, description: user.description, avatar: user.avatar } })
 }
 
 export async function updateUserChatModel(userId: string, chatModel: CHATMODEL) {
@@ -241,9 +235,9 @@ export async function updateUserPassword(userId: string, password: string) {
     , { $set: { password, updateTime: new Date().toLocaleString() } })
 }
 
-export async function getUser(email: string): Promise<UserInfo> {
-  email = email.toLowerCase()
-  const userInfo = await userCol.findOne({ email }) as UserInfo
+export async function getUser(username: string): Promise<UserInfo> {
+  username = username.toLowerCase()
+  const userInfo = await userCol.findOne({ username }) as UserInfo
   initUserInfo(userInfo)
   return userInfo
 }

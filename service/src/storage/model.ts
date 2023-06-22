@@ -25,8 +25,10 @@ export enum UserRole {
 
 export class UserInfo {
   _id: ObjectId
-  name: string
+  nickname: string
+  username: string
   email: string
+  phone: string
   password: string
   status: Status
   createTime: string
@@ -36,9 +38,11 @@ export class UserInfo {
   updateTime?: string
   config?: UserConfig
   roles?: UserRole[]
-  constructor(email: string, password: string) {
-    this.name = email
-    this.email = email
+  constructor(username: string, password: string) {
+    this.nickname = '暂未设置'
+    this.username = username
+    this.email = username
+    this.phone = username
     this.password = password
     this.status = Status.PreVerify
     this.createTime = new Date().toLocaleString()
