@@ -2,7 +2,6 @@
 import { computed, nextTick } from 'vue'
 import { HoverButton, SvgIcon } from '@/components/common'
 import { useAppStore, useChatStore } from '@/store'
-import IconPrompt from '@/icons/Prompt.vue'
 
 interface Props {
   usingContext: boolean
@@ -42,10 +41,6 @@ function handleExport() {
 function toggleUsingContext() {
   emit('toggleUsingContext')
 }
-
-function handleShowPrompt() {
-  emit('toggleShowPrompt')
-}
 </script>
 
 <template>
@@ -69,11 +64,6 @@ function handleShowPrompt() {
         {{ currentChatHistory?.title ?? '' }}
       </h1>
       <div class="flex items-center space-x-2">
-        <HoverButton @click="handleShowPrompt">
-          <span class="text-xl" :class="{ 'text-[#4b9e5f]': usingContext, 'text-[#a8071a]': !usingContext }">
-            <IconPrompt class="w-[20px] m-auto" />
-          </span>
-        </HoverButton>
         <HoverButton @click="toggleUsingContext">
           <span class="text-xl" :class="{ 'text-[#4b9e5f]': usingContext, 'text-[#a8071a]': !usingContext }">
             <SvgIcon icon="ri:chat-history-line" />

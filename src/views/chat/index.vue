@@ -15,7 +15,6 @@ import { useAuthStore, useChatStore, useUserStore } from '@/store'
 import { fetchChatAPIProcess, fetchChatResponseoHistory, fetchChatStopResponding, fetchUpdateUserChatModel } from '@/api'
 import { t } from '@/locales'
 import { debounce } from '@/utils/functions/debounce'
-import IconPrompt from '@/icons/Prompt.vue'
 import { UserConfig } from '@/components/common/Setting/model'
 import type { CHATMODEL } from '@/components/common/Setting/model'
 
@@ -636,11 +635,6 @@ onUnmounted(() => {
             <HoverButton v-if="!isMobile" @click="handleExport">
               <span class="text-xl text-[#4f555e] dark:text-white">
                 <SvgIcon icon="ri:download-2-line" />
-              </span>
-            </HoverButton>
-            <HoverButton v-if="!isMobile" @click="showPrompt = true">
-              <span class="text-xl text-[#4f555e] dark:text-white">
-                <IconPrompt class="w-[20px] m-auto" />
               </span>
             </HoverButton>
             <HoverButton v-if="!isMobile" @click="handleToggleUsingContext">
