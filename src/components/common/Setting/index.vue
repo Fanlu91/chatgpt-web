@@ -6,12 +6,11 @@ import Advanced from './Advanced.vue'
 import Statistics from './Statistics.vue'
 import About from './About.vue'
 import Site from './Site.vue'
-import Mail from './Mail.vue'
 import Audit from './Audit.vue'
 import User from './User.vue'
 import Key from './Keys.vue'
 import { SvgIcon } from '@/components/common'
-import { useAuthStore, useUserStore } from '@/store'
+import { useUserStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 
 const props = defineProps<Props>()
@@ -19,10 +18,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emit>()
 
 const userStore = useUserStore()
-const authStore = useAuthStore()
 const { isMobile } = useBasicLayout()
-
-const isChatGPTAPI = computed<boolean>(() => !!authStore.isChatGPTAPI)
 
 interface Props {
   visible: boolean
@@ -57,7 +53,7 @@ const show = computed({
             <General />
           </div>
         </NTabPane>
-        <NTabPane v-if="isChatGPTAPI" name="Advanced" tab="Advanced">
+        <NTabPane v-if="userStore.userInfo.root" name="Advanced" tab="Advanced">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:equalizer-line" />
             <span class="ml-2">{{ $t('setting.advanced') }}</span>
@@ -66,7 +62,7 @@ const show = computed({
             <Advanced />
           </div>
         </NTabPane>
-        <NTabPane name="Statistics" tab="Statistics">
+        <NTabPane v-if="userStore.userInfo.root" name="Statistics" tab="Statistics">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:bar-chart-box-line" />
             <span class="ml-2">{{ $t('setting.statistics') }}</span>
@@ -88,13 +84,6 @@ const show = computed({
             <span class="ml-2">{{ $t('setting.siteConfig') }}</span>
           </template>
           <Site />
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="MailConfig" tab="MailConfig">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:mail-line" />
-            <span class="ml-2">{{ $t('setting.mailConfig') }}</span>
-          </template>
-          <Mail />
         </NTabPane>
         <NTabPane v-if="userStore.userInfo.root" name="AuditConfig" tab="AuditConfig">
           <template #tab>

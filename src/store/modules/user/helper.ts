@@ -4,6 +4,7 @@ import { ss } from '@/utils/storage'
 const LOCAL_NAME = 'userStorage'
 
 export interface UserInfo {
+  nickname: string
   avatar: string
   name: string
   description: string
@@ -18,6 +19,7 @@ export interface UserState {
 export function defaultSetting(): UserState {
   return {
     userInfo: {
+      nickname: '未设置',
       avatar: '',
       name: '',
       description: '',
