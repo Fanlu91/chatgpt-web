@@ -79,7 +79,6 @@ export function fetchSendVerificationCode<T = any>(phone: string, existingUser?:
     url: '/user-send-verification-code',
     data: { phone, existingUser },
   })
-  console.log(response)
   return response
 }
 

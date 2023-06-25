@@ -7,30 +7,24 @@ import Icon403 from '@/icons/403.vue'
 import { useAuthStore } from '@/store'
 
 const visible = ref(true)
-// const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const showMessage = useMessage()
 
+const activeTab = ref('login')
+
 const loading = ref(false)
 const sendLoading = ref(false)
+
 const username = ref('')
 const password = ref('')
 const verificationCode = ref('')
-
-const disabled = computed(() => !username.value.trim() || !password.value.trim() || loading.value)
-
-const activeTab = ref('login')
-
 const showConfirmPassword = ref(false)
 const confirmPassword = ref('')
+const disabled = computed(() => !username.value.trim() || !password.value.trim() || loading.value)
 
 const onlyAllowNumber = (value: string) => !value || /^\d+$/.test(value)
-
-function handlePasswordInput() {
-  showConfirmPassword.value = password.value.trim() !== ''
-}
 
 const confirmPasswordStatus = computed(() => {
   if (!password.value || !confirmPassword.value)
@@ -39,9 +33,14 @@ const confirmPasswordStatus = computed(() => {
 })
 
 onMounted(async () => {
+  // console.log(authStore.$state.session)
   if (authStore.isAuthenticated)
     router.replace('/chat')
 })
+
+function handlePasswordInput() {
+  showConfirmPassword.value = password.value.trim() !== ''
+}
 
 function handlePress(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -96,15 +95,15 @@ async function handleRegister() {
   }
 }
 
-async function handleSendVerificationCode() {
+async function handleSendVerificationCode(isReset: boolean) {
   const name = username.value.trim()
-  // const message = undefined
+
   if (!name)
     return
 
   try {
     sendLoading.value = true
-    const result = await fetchSendVerificationCode(name, false)
+    const result = await fetchSendVerificationCode(name, isReset)
     showMessage.success(result.message as string)
     if (result.status === 'Success')
       authStore.startCooldown()
@@ -112,27 +111,6 @@ async function handleSendVerificationCode() {
   catch (error: any) {
     const message = error.response?.data?.message ?? 'error'
     showMessage.loading(message)
-  }
-  finally {
-    sendLoading.value = false
-  }
-}
-
-async function handleSendResetCode() {
-  const name = username.value.trim()
-
-  if (!name)
-    return
-
-  try {
-    sendLoading.value = true
-    const result = await fetchSendVerificationCode(name, true)
-    showMessage.success(result.message as string)
-    if (result.status === 'Success')
-      authStore.startCooldown()
-  }
-  catch (error: any) {
-    showMessage.loading(error.message ?? 'error')
   }
   finally {
     sendLoading.value = false
@@ -218,7 +196,7 @@ async function handleResetPassword() {
                   :status="confirmPasswordStatus"
                 />
 
-                <NButton type="primary" :loading="sendLoading" :disabled="authStore.cooldown > 0" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode">
+                <NButton type="primary" :loading="sendLoading" :disabled="authStore.cooldown > 0" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode(false)">
                   {{ authStore.cooldown > 0 ? `${authStore.cooldown}秒后重新发送` : $t('common.sendVerificationCode') }}
                 </NButton>
               </div>
@@ -231,7 +209,7 @@ async function handleResetPassword() {
               <NInput v-model:value="username" type="text" :placeholder="$t('common.phone')" class="mb-2" />
               <div style="display: flex; justify-content: space-between;">
                 <NInput v-model:value="verificationCode" maxlength="4" show-count clearable :allow-input="onlyAllowNumber" type="text" :placeholder="$t('common.verificationCode')" class="mb-4" />
-                <NButton type="primary" :loading="sendLoading" :disabled="authStore.cooldown > 0" style="flex: 1; margin-left: 10px;" @click="handleSendResetCode">
+                <NButton type="primary" :loading="sendLoading" :disabled="authStore.cooldown > 0" style="flex: 1; margin-left: 10px;" @click="handleSendVerificationCode(true)">
                   {{ authStore.cooldown > 0 ? `${authStore.cooldown}秒后重新发送` : $t('common.sendVerificationCode') }}
                 </NButton>
               </div>
