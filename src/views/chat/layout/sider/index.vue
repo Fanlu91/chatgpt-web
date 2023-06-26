@@ -1,14 +1,13 @@
 <script setup lang='ts'>
 import type { CSSProperties } from 'vue'
 import { computed, watch } from 'vue'
-import { NButton, NLayoutSider } from 'naive-ui'
+import { NButton, NDivider, NLayoutSider } from 'naive-ui'
 import List from './List.vue'
 import Footer from './Footer.vue'
-import { useAppStore, useAuthStore, useChatStore } from '@/store'
+import { useAppStore, useChatStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 
 const appStore = useAppStore()
-const authStore = useAuthStore()
 const chatStore = useChatStore()
 
 const { isMobile } = useBasicLayout()
@@ -71,9 +70,14 @@ watch(
     <div class="flex flex-col h-full" :style="mobileSafeArea">
       <main class="flex flex-col flex-1 min-h-0">
         <div class="p-4">
-          <NButton dashed block :disabled="!!authStore.session?.auth && !authStore.token" @click="handleAdd">
-            {{ $t('chat.newChatButton') }}
+          <NButton block strong type="primary" @click="handleAdd">
+            开启新的对话
           </NButton>
+        </div>
+        <div style="margin: 0; padding: 0;">
+          <NDivider dashed title-placement="left" title-class="text-xs" style="margin: 0; color: rgb(17, 131, 87);">
+            历史记录
+          </NDivider>
         </div>
         <div class="flex-1 min-h-0 pb-4 overflow-hidden">
           <List />
