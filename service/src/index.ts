@@ -691,7 +691,7 @@ router.post('/user-reset-password', authLimiter, async (req, res) => {
   }
 })
 
-router.post('/user-info', auth, async (req, res) => {
+router.post('/update-user-info', auth, async (req, res) => {
   try {
     const { nickname, avatar, description } = req.body as UserInfo
     const userId = req.headers.userId.toString()

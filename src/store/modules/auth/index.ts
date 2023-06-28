@@ -8,7 +8,7 @@ import { UserConfig } from '@/components/common/Setting/model'
 
 interface SessionResponse {
   auth: boolean
-  model: 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
+  model: 'ChatGPTAPI'
   allowRegister: boolean
   title: string
   chatModels: {
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore('auth-store', {
 
       await userStore.updateUserInfo(false, {
         avatar: decoded.avatar,
-        name: decoded.name,
+        nickname: decoded.nickname,
         description: decoded.description,
         root: decoded.root,
         config: decoded.config,

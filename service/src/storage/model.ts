@@ -8,45 +8,44 @@ export enum Status {
   ResponseDeleted = 3,
   PreVerify = 4,
   AdminVerify = 5,
-  Disabled = 6,
+  Disabled = 6, // 过期超过一周将被禁用
+  Expired = 7, // 过期
+  Overused = 8, // 超过限额
 }
 
 export enum UserRole {
   Admin = 0,
   User = 1,
-  Guest = 2,
-  Support = 3,
-  Viewer = 4,
-  Contributor = 5,
-  Developer = 6,
   Tester = 7,
   Partner = 8,
 }
 
 export class UserInfo {
   _id: ObjectId
-  nickname: string
   username: string
+  nickname: string
   email: string
   phone: string
   password: string
   status: Status
   createTime: string
-  verifyTime?: string
+  expiredTime: string
   avatar?: string
   description?: string
   updateTime?: string
   config?: UserConfig
   roles?: UserRole[]
   constructor(username: string, password: string) {
+    const expiredDate = new Date()
+    expiredDate.setDate(expiredDate.getDate() + 7)
+
     this.nickname = '暂未设置'
     this.username = username
-    this.email = username
     this.phone = username
     this.password = password
-    this.status = Status.PreVerify
+    this.status = Status.Expired
     this.createTime = new Date().toLocaleString()
-    this.verifyTime = null
+    this.expiredTime = expiredDate.toLocaleString()
     this.updateTime = new Date().toLocaleString()
     this.roles = [UserRole.User]
   }
@@ -83,17 +82,14 @@ export class ChatRoom {
   userId: string
   title: string
   prompt: string
-  usingContext: boolean
+  usingContext: boolean // 上下文模式
   status: Status = Status.Normal
-  // only access token used
-  accountId?: string
   constructor(userId: string, title: string, roomId: number) {
     this.userId = userId
     this.title = title
     this.prompt = undefined
     this.roomId = roomId
     this.usingContext = true
-    this.accountId = null
   }
 }
 

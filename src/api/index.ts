@@ -103,10 +103,10 @@ export function fetchRegister<T = any>(username: string, password: string, verif
   })
 }
 
-export function fetchUpdateUserInfo<T = any>(name: string, avatar: string, description: string) {
+export function fetchUpdateUserInfo<T = any>(nickname: string, avatar: string, description: string) {
   return post<T>({
-    url: '/user-info',
-    data: { name, avatar, description },
+    url: '/update-user-info',
+    data: { nickname, avatar, description },
   })
 }
 
