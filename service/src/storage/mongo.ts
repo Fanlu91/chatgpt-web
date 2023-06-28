@@ -69,6 +69,7 @@ export async function updateChat(chatId: string, response: string, messageId: st
       'options.completion_tokens': usage?.completion_tokens,
       'options.total_tokens': usage?.total_tokens,
       'options.estimated': usage?.estimated,
+      'previousResponse': undefined,
     },
   }
 
@@ -141,7 +142,15 @@ export async function updateRoomAccountId(userId: string, roomId: number, accoun
 export async function getChatRooms(userId: string) {
   const cursor = await roomCol.find({ userId, status: { $ne: Status.Deleted } })
   const rooms = []
-  await cursor.forEach(doc => rooms.push(doc))
+  // await cursor.forEach(doc => rooms.push(doc))
+  // 上面的写法报错：Type 'number' is not assignable to type 'boolean | void'.ts(2322)
+  // 问题源于箭头函数（arrow function）的隐式返回。当我们的箭头函数只有一行代码，且不包含大括号 {} 时，这行代码的执行结果会被自动返回
+  // rooms.push(doc) 会返回新数组的长度（这是 Array.prototype.push 方法的行为）
+  // 当我们把箭头函数包含在大括号 {} 中时，除非使用了 return 关键字，否则函数不会返回任何东西（即返回 undefined）
+  await cursor.forEach((doc) => {
+    rooms.push(doc)
+  })
+  // const rooms = await cursor.toArray();
   return rooms
 }
 
@@ -166,7 +175,12 @@ export async function getChats(roomId: number, lastId?: number) {
   const limit = 20
   const cursor = await chatCol.find(query).sort({ dateTime: -1 }).limit(limit)
   const chats = []
-  await cursor.forEach(doc => chats.push(doc))
+  // await cursor.forEach((doc) => { chats.push(doc) })
+  // max-statements-per-line 是用来限制每一行中语句的数量。
+  // 在你的代码中，ESLint 将 await 和 chats.push(doc) 视为两个语句，因为它们在同一行，所以违反了这个规则。
+  await cursor.forEach((doc) => {
+    chats.push(doc)
+  })
   chats.reverse()
   return chats
 }
@@ -249,8 +263,10 @@ export async function getUsers(page: number, size: number): Promise<{ users: Use
   const skip = (page - 1) * size
   const limit = size
   const pagedCursor = cursor.skip(skip).limit(limit)
-  const users: UserInfo[] = []
-  await pagedCursor.forEach(doc => users.push(doc))
+  const users = []
+  await pagedCursor.forEach((doc) => {
+    users.push(doc)
+  })
   users.forEach((user) => {
     initUserInfo(user)
   })
@@ -377,7 +393,9 @@ export async function getKeys(): Promise<{ keys: KeyConfig[]; total: number }> {
   const cursor = await keyCol.find(query)
   const total = await keyCol.countDocuments(query)
   const keys = []
-  await cursor.forEach(doc => keys.push(doc))
+  await cursor.forEach((doc) => {
+    keys.push(doc)
+  })
   return { keys, total }
 }
 
