@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken'
 import type { Request, Response } from 'express'
-import { ForbiddenError, ServiceUnavailableError, checkUserAndPhone, getAndSendVerificationCode, register, resetPassword, verifyUser } from '../service/userService'
+import { checkUserAndPhone, getAndSendVerificationCode, register, resetPassword, verifyUser } from '../service/userService'
 import { UserRole } from '../types/UserRole'
 import { getCacheConfig } from '../service/configService'
+import { handleErrors } from '../utils/errorHandler'
 
 export const sendVerificationCode = async (req: Request, res: Response) => {
   const { phone, existingUser } = req.body
@@ -19,13 +20,11 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body
+  if (!username || !password)
+    throw new Error('用户名或密码为空 | Username or password is empty')
+  console.log(new Date(), '登录', username)
   try {
-    console.log(new Date(), '登录', username)
-    if (!username || !password)
-      throw new Error('用户名或密码为空 | Username or password is empty')
-
     const user = await verifyUser(username, password)
-
     const config = await getCacheConfig()
     const token = jwt.sign({
       name: user.nickname,
@@ -64,14 +63,4 @@ export const userResetPassword = async (req: Request, res: Response) => {
   catch (error) {
     handleErrors(res, error)
   }
-}
-
-function handleErrors(res: Response, error: Error) {
-  console.error(error)
-  if (error instanceof ForbiddenError)
-    res.status(403).send({ status: 'Fail', message: error.message, data: null })
-  else if (error instanceof ServiceUnavailableError)
-    res.status(503).send({ status: 'Fail', message: error.message, data: null })
-  else
-    res.status(500).send({ status: 'Fail', message: error.message, data: null })
 }

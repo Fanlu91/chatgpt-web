@@ -1,5 +1,6 @@
 import { isPhoneNumber, isValidPassword } from 'src/utils/is'
 import { sendRegisterSms } from 'src/utils/phone'
+import { ForbiddenError, ServiceUnavailableError } from 'src/utils/errorHandler'
 import { Status } from '../types/Status'
 import { createUser, generateVerificationCode, getUser, updateUserPassword } from '../storage/mongo'
 import { encryptPassword, validateVerificationCode } from '../utils/security'
@@ -8,16 +9,19 @@ import { getCacheConfig } from './configService'
 export const verifyUser = async (username: string, password: string) => {
   const user = await getUser(username)
   if (!user || user.password !== encryptPassword(password))
-    throw new Error('用户不存在或密码错误 | User does not exist or incorrect password.')
+    throw new ForbiddenError('用户不存在或密码错误 | User does not exist or incorrect password.')
 
   if (user.status === Status.PreVerify)
-    throw new Error('注册信息验证成功。很抱歉，本站目前不向公众提供服务。')
+    throw new ForbiddenError('注册信息验证成功。但是很抱歉，本站目前不向公众提供服务。')
 
   if (user.status === Status.AdminVerify)
-    throw new Error('请等待管理员开通 | Please wait for the admin to activate')
+    throw new ForbiddenError('请等待管理员开通 | Please wait for the admin to activate')
+
+  if (user.status === Status.Expired)
+    throw new ForbiddenError('您的账户已过期，请联系管理员处理。')
 
   if (user.status !== Status.Normal)
-    throw new Error('账状态异常 | Account status abnormal.')
+    throw new ForbiddenError('账状态异常 | Account status abnormal.')
 
   return user
 }
@@ -87,18 +91,4 @@ export const resetPassword = async (username: string, password: string, sign: st
   updateUserPassword(user._id.toString(), encryptPassword(password))
 
   return { message: '密码重置成功 | Password reset successful' }
-}
-
-export class ForbiddenError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ForbiddenError'
-  }
-}
-
-export class ServiceUnavailableError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ServiceUnavailableError'
-  }
 }

@@ -44,7 +44,7 @@ import { hasAnyRole, isNotEmptyString, isPhoneNumber, isValidPassword } from './
 import { sendNoticeMail, sendTestMail } from './utils/mail'
 import { encryptPassword, validateVerificationCode } from './utils/security'
 import { rootAuth } from './middleware/rootAuth'
-import userRouter from './route/userRoute'
+import userRouter from './route/userRouter'
 const app = express()
 const router = express.Router()
 
