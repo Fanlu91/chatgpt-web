@@ -10,12 +10,11 @@ import jwt_decode from 'jwt-decode'
 import dayjs from 'dayjs'
 import type { TextAuditService } from '../utils/textAudit'
 import { textAuditServices } from '../utils/textAudit'
-import { getCacheApiKeys, getCacheConfig, getOriginConfig } from '../storage/config'
+import { getCacheApiKeys, getCacheConfig, getOriginConfig } from '../service/configService'
 import { sendResponse } from '../utils'
 import { hasAnyRole, isNotEmptyString } from '../utils/is'
-import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, JWT, ModelConfig } from '../types'
 import { getChatByMessageId } from '../storage/mongo'
-import type { RequestOptions } from './types'
+import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, JWT, ModelConfig, RequestOptions } from './types'
 
 const { HttpsProxyAgent } = httpsProxyAgent
 

@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import nodemailer from 'nodemailer'
 import type { MailConfig } from '../storage/model'
-import { getCacheConfig } from '../storage/config'
+import { getCacheConfig } from '../service/configService'
 
 export async function sendVerifyMail(toMail: string, verifyUrl: string) {
   const config = (await getCacheConfig())

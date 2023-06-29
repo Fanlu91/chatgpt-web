@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import type { Request } from 'express'
-import { getCacheConfig } from '../storage/config'
+import { getCacheConfig } from '../service/configService'
 import { getUserById } from '../storage/mongo'
-import { Status } from '../storage/model'
+import { Status } from '../types/Status'
 
 const auth = async (req, res, next) => {
   const config = await getCacheConfig()

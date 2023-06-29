@@ -1,4 +1,4 @@
-import type { UserRole } from '../storage/model'
+import type { UserRole } from '../storage/UserRole'
 import { TextAudioType } from '../storage/model'
 import type { TextAuditServiceProvider } from './textAudit'
 

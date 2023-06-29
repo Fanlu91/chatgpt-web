@@ -2,8 +2,9 @@ import { ObjectId } from 'mongodb'
 import * as dotenv from 'dotenv'
 import type { TextAuditServiceProvider } from 'src/utils/textAudit'
 import { isNotEmptyString, isTextAuditServiceProvider } from '../utils/is'
-import { AuditConfig, CHATMODELS, Config, KeyConfig, MailConfig, SiteConfig, TextAudioType, UserRole } from './model'
-import { getConfig, getKeys, upsertKey } from './mongo'
+import { UserRole } from '../types/UserRole'
+import { AuditConfig, Config, KeyConfig, MailConfig, SiteConfig, TextAudioType, chatModels } from '../storage/model'
+import { getConfig, getKeys, upsertKey } from '../storage/mongo'
 
 dotenv.config()
 
@@ -32,7 +33,7 @@ export async function getOriginConfig() {
       process.env.OPENAI_API_DISABLE_DEBUG === 'true',
       process.env.OPENAI_ACCESS_TOKEN,
       process.env.OPENAI_API_BASE_URL,
-      process.env.OPENAI_API_MODEL === 'ChatGPTUnofficialProxyAPI' ? 'ChatGPTUnofficialProxyAPI' : 'ChatGPTAPI',
+      process.env.OPENAI_API_MODEL = 'ChatGPTAPI',
       process.env.API_REVERSE_PROXY,
       (process.env.SOCKS_PROXY_HOST && process.env.SOCKS_PROXY_PORT)
         ? (`${process.env.SOCKS_PROXY_HOST}:${process.env.SOCKS_PROXY_PORT}`)
@@ -69,12 +70,6 @@ export async function getOriginConfig() {
     }
     if (config.siteConfig.registerReview === undefined)
       config.siteConfig.registerReview = process.env.REGISTER_REVIEW === 'true'
-  }
-  if (config.apiModel !== 'ChatGPTAPI' && config.apiModel !== 'ChatGPTUnofficialProxyAPI') {
-    if (isNotEmptyString(config.accessToken))
-      config.apiModel = 'ChatGPTUnofficialProxyAPI'
-    else
-      config.apiModel = 'ChatGPTAPI'
   }
 
   if (config.auditConfig === undefined) {
@@ -145,9 +140,6 @@ export async function getApiKeys() {
     if (config.apiModel === 'ChatGPTAPI')
       result.keys.push(await upsertKey(new KeyConfig(config.apiKey, 'ChatGPTAPI', [], [], '')))
 
-    if (config.apiModel === 'ChatGPTUnofficialProxyAPI')
-      result.keys.push(await upsertKey(new KeyConfig(config.accessToken, 'ChatGPTUnofficialProxyAPI', [], [], '')))
-
     result.total++
   }
   result.keys.forEach((key) => {
@@ -157,7 +149,7 @@ export async function getApiKeys() {
       key.userRoles.push(UserRole.Guest)
     }
     if (key.chatModels == null || key.chatModels.length <= 0) {
-      CHATMODELS.forEach((chatModel) => {
+      chatModels.forEach((chatModel) => {
         key.chatModels.push(chatModel)
       })
     }

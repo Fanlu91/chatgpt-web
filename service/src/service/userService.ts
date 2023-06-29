@@ -1,0 +1,104 @@
+import { isPhoneNumber, isValidPassword } from 'src/utils/is'
+import { sendRegisterSms } from 'src/utils/phone'
+import { Status } from '../types/Status'
+import { createUser, generateVerificationCode, getUser, updateUserPassword } from '../storage/mongo'
+import { encryptPassword, validateVerificationCode } from '../utils/security'
+import { getCacheConfig } from './configService'
+
+export const verifyUser = async (username: string, password: string) => {
+  const user = await getUser(username)
+  if (!user || user.password !== encryptPassword(password))
+    throw new Error('用户不存在或密码错误 | User does not exist or incorrect password.')
+
+  if (user.status === Status.PreVerify)
+    throw new Error('注册信息验证成功。很抱歉，本站目前不向公众提供服务。')
+
+  if (user.status === Status.AdminVerify)
+    throw new Error('请等待管理员开通 | Please wait for the admin to activate')
+
+  if (user.status !== Status.Normal)
+    throw new Error('账状态异常 | Account status abnormal.')
+
+  return user
+}
+
+const sendVerificationCodeCooldown = {}
+
+export const checkUserAndPhone = async (phone: string, existingUser: boolean) => {
+  if (!phone || !isPhoneNumber(phone))
+    throw new ForbiddenError('请输入格式正确的手机号')
+
+  const user = await getUser(phone)
+  if (existingUser) {
+    if (user == null)
+      throw new ForbiddenError('您不是本站用户')
+  }
+  else {
+    if (user != null)
+      throw new ForbiddenError('该手机号已注册，请直接登录')
+  }
+
+  if (sendVerificationCodeCooldown[phone] && Date.now() - sendVerificationCodeCooldown[phone] < 60000)
+    throw new ForbiddenError('1分钟之内不能重复发送验证码')
+}
+
+export const getAndSendVerificationCode = async (phone: string) => {
+  const verificationCode = await generateVerificationCode(phone)
+  console.log('生成短信验证码:', phone, verificationCode.code)
+
+  const response = await sendRegisterSms(phone, verificationCode.code)
+
+  if (response.SendStatusSet[0].Code === 'Ok') {
+    sendVerificationCodeCooldown[phone] = Date.now()
+    return { message: '短信验证码已发送，10分钟内有效' }
+  }
+  else {
+    throw new ServiceUnavailableError('短信服务暂时不可用，请稍后重试或联系管理员')
+  }
+}
+
+export const register = async (username: string, verificationCode: string, password: string) => {
+  const config = await getCacheConfig()
+  if (!config.siteConfig.registerEnabled)
+    throw new ForbiddenError('注册账号功能未启用')
+
+  const user = await getUser(username)
+  if (user != null)
+    throw new ForbiddenError('该手机号已注册，请直接登录')
+
+  if (!password || !isValidPassword(password))
+    throw new ForbiddenError('密码太简单啦。建议最少6位且需同时包含数字和字母')
+
+  await validateVerificationCode(username, verificationCode)
+
+  const newPassword = encryptPassword(password)
+  await createUser(username, newPassword)
+
+  return { message: '注册成功。' }
+}
+
+export const resetPassword = async (username: string, password: string, sign: string) => {
+  await validateVerificationCode(username, sign)
+
+  const user = await getUser(username)
+  if (user == null || user.status !== Status.Normal)
+    throw new Error('账户状态异常 | Account status abnormal.')
+
+  updateUserPassword(user._id.toString(), encryptPassword(password))
+
+  return { message: '密码重置成功 | Password reset successful' }
+}
+
+export class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ForbiddenError'
+  }
+}
+
+export class ServiceUnavailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ServiceUnavailableError'
+  }
+}

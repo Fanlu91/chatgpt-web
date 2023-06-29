@@ -1,7 +1,9 @@
 import { MongoClient, ObjectId } from 'mongodb'
 import * as dotenv from 'dotenv'
 import dayjs from 'dayjs'
-import { ChatInfo, ChatRoom, ChatUsage, Status, UserConfig, UserInfo, UserRole, VerificationCode } from './model'
+import { Status } from '../types/Status'
+import { ChatInfo, ChatRoom, ChatUsage, UserConfig, UserInfo, VerificationCode } from './model'
+import { UserRole } from '../types/UserRole'
 import type { CHATMODEL, ChatOptions, Config, KeyConfig, UsageResponse } from './model'
 
 dotenv.config()
@@ -128,17 +130,6 @@ export async function updateRoomUsingContext(userId: string, roomId: number, usi
   return result.modifiedCount > 0
 }
 
-export async function updateRoomAccountId(userId: string, roomId: number, accountId: string) {
-  const query = { userId, roomId }
-  const update = {
-    $set: {
-      accountId,
-    },
-  }
-  const result = await roomCol.updateOne(query, update)
-  return result.modifiedCount > 0
-}
-
 export async function getChatRooms(userId: string) {
   const cursor = await roomCol.find({ userId, status: { $ne: Status.Deleted } })
   const rooms = []
@@ -236,7 +227,7 @@ export async function createUser(username: string, password: string, isRoot?: bo
 
 export async function updateUserInfo(userId: string, user: UserInfo) {
   return userCol.updateOne({ _id: new ObjectId(userId) }
-    , { $set: { name: user.nickname, description: user.description, avatar: user.avatar } })
+    , { $set: { nickname: user.nickname, description: user.description, avatar: user.avatar } })
 }
 
 export async function updateUserChatModel(userId: string, chatModel: CHATMODEL) {

@@ -4,7 +4,7 @@ import { getVerificationCode } from 'src/storage/mongo'
 
 dotenv.config()
 
-export function md5(input: string) {
+export function encryptPassword(input: string) {
   input = input + process.env.PASSWORD_MD5_SALT
   const md5 = createHash('md5')
   md5.update(input)

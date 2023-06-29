@@ -69,14 +69,14 @@ export function fetchSession<T>() {
 
 export function fetchLogin<T = any>(username: string, password: string) {
   return post<T>({
-    url: '/user-login',
+    url: '/user/login',
     data: { username, password },
   })
 }
 
 export function fetchSendVerificationCode<T = any>(phone: string, existingUser?: boolean) {
   const response = post<T>({
-    url: '/user-send-verification-code',
+    url: '/user/send-verification-code',
     data: { phone, existingUser },
   })
   return response
@@ -84,7 +84,7 @@ export function fetchSendVerificationCode<T = any>(phone: string, existingUser?:
 
 export function fetchResetPassword<T = any>(username: string, password: string, sign: string) {
   return post<T>({
-    url: '/user-reset-password',
+    url: '/user/reset-password',
     data: { username, password, sign },
   })
 }

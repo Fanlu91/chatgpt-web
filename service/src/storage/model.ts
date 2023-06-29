@@ -1,24 +1,7 @@
 import type { ObjectId } from 'mongodb'
 import type { TextAuditServiceOptions, TextAuditServiceProvider } from 'src/utils/textAudit'
-
-export enum Status {
-  Normal = 0,
-  Deleted = 1,
-  InversionDeleted = 2,
-  ResponseDeleted = 3,
-  PreVerify = 4,
-  AdminVerify = 5,
-  Disabled = 6, // 过期超过一周将被禁用
-  Expired = 7, // 过期
-  Overused = 8, // 超过限额
-}
-
-export enum UserRole {
-  Admin = 0,
-  User = 1,
-  Tester = 7,
-  Partner = 8,
-}
+import { Status } from '../types/Status'
+import { UserRole } from '../types/UserRole'
 
 export class UserInfo {
   _id: ObjectId
@@ -57,18 +40,16 @@ export class UserConfig {
 
 // https://platform.openai.com/docs/models/overview
 // 除此之外，gpt-4-0314、gpt-4-32k-0314、gpt-3.5-turbo-0301 模型将在 9 月 13 日被弃用。
-export type CHATMODEL = 'gpt-3.5-turbo' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-16k-0613' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-0613' | 'gpt-4-32k-0613' | 'text-davinci-002-render-sha-mobile' | 'text-embedding-ada-002' | 'gpt-4-mobile' | 'gpt-4-browsing'
+export type CHATMODEL = 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-4' | 'gpt-4-32k' | 'gpt-4-browsing'
 
-export const CHATMODELS: CHATMODEL[] = [
-  'gpt-3.5-turbo', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k-0613', 'gpt-4', 'gpt-4-0314', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-0613', 'gpt-4-32k-0613', 'text-davinci-002-render-sha-mobile', 'text-embedding-ada-002', 'gpt-4-mobile', 'gpt-4-browsing',
+export const chatModels: CHATMODEL[] = [
+  'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-4', 'gpt-4-32k', 'gpt-4-browsing',
 ]
 
 export const chatModelOptions = [
-  'gpt-3.5-turbo', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-16k-0613', 'gpt-4', 'gpt-4-0314', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-0613', 'gpt-4-32k-0613', 'text-davinci-002-render-sha-mobile', 'text-embedding-ada-002', 'gpt-4-mobile', 'gpt-4-browsing',
+  'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-4', 'gpt-4-32k', 'gpt-4-browsing',
 ].map((model: string) => {
-  let label = model
-  if (model === 'text-davinci-002-render-sha-mobile')
-    label = 'gpt-3.5-mobile'
+  const label = model
   return {
     label,
     key: model,
@@ -242,7 +223,7 @@ export class KeyConfig {
   }
 }
 
-export type APIMODEL = 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI'
+export type APIMODEL = 'ChatGPTAPI'
 
 export class VerificationCode {
   _id: ObjectId

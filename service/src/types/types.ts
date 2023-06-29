@@ -37,7 +37,7 @@ export interface ModelConfig {
   accessTokenExpiredTime?: string
 }
 
-export type APIMODEL = 'ChatGPTAPI' | 'ChatGPTUnofficialProxyAPI' | undefined
+export type APIMODEL = 'ChatGPTAPI' | undefined
 
 export interface JWT {
   'https://api.openai.com/profile': {

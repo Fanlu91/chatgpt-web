@@ -10,6 +10,8 @@ export interface UserInfo {
   description: string
   root: boolean
   config: UserConfig
+  createTime?: string
+  updateTime?: string
 }
 
 export interface UserState {
@@ -24,6 +26,8 @@ export function defaultSetting(): UserState {
       name: '',
       description: '',
       root: false,
+      createTime: '',
+      updateTime: '',
       config: { chatModel: 'gpt-3.5-turbo' },
     },
   }
@@ -31,10 +35,10 @@ export function defaultSetting(): UserState {
 
 export function getLocalState(): UserState {
   const localSetting: UserState | undefined = ss.get(LOCAL_NAME)
-  if (localSetting != null && localSetting.userInfo != null && localSetting.userInfo.config == null) {
+  if (localSetting != null && localSetting.userInfo != null && localSetting.userInfo.config == null)
     localSetting.userInfo.config = new UserConfig()
-    localSetting.userInfo.config.chatModel = 'gpt-3.5-turbo'
-  }
+    // localSetting.userInfo.config.chatModel = 'gpt-3.5-turbo'
+
   return { ...defaultSetting(), ...localSetting }
 }
 
