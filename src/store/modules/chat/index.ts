@@ -51,10 +51,12 @@ export const useChatStore = defineStore('chat-store', {
     async syncChat(h: Chat.History, lastId?: number, callback?: () => void,
       callbackForStartRequest?: () => void,
       callbackForEmptyMessage?: () => void) {
+      // 传入的历史对象(h)是否有 uuid，如果没有，它会立即调用回调并退出
       if (!h.uuid) {
         callback && callback()
         return
       }
+
       const hisroty = this.history.filter(item => item.uuid === h.uuid)[0]
       if (hisroty === undefined || hisroty.loading || hisroty.all) {
         if (lastId === undefined) {

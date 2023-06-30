@@ -98,7 +98,7 @@ export function fetchRegister<T = any>(username: string, password: string, verif
 
 export function fetchUpdateUserInfo<T = any>(nickname: string, avatar: string, description: string) {
   return post<T>({
-    url: '/update-user-info',
+    url: '/user/update-info',
     data: { nickname, avatar, description },
   })
 }
@@ -112,21 +112,21 @@ export function fetchUpdateUserChatModel<T = any>(chatModel: CHATMODEL) {
 
 export function fetchGetUsers<T = any>(page: number, size: number) {
   return get<T>({
-    url: '/users',
+    url: '/user/all-user',
     data: { page, size },
   })
 }
 
 export function fetchUpdateUserStatus<T = any>(userId: string, status: Status) {
   return post<T>({
-    url: '/user-status',
+    url: '/user/update-status',
     data: { userId, status },
   })
 }
 
 export function fetchUpdateUserRole<T = any>(userId: string, roles: UserRole[]) {
   return post<T>({
-    url: '/user-role',
+    url: '/user/update-role',
     data: { userId, roles },
   })
 }

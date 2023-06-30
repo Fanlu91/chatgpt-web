@@ -56,7 +56,7 @@ export async function updateUserInfo(userId: string, user: UserInfo) {
   const db = await Database.getDB()
   const userCol = db.collection(userCollection)
   return userCol.updateOne({ _id: new ObjectId(userId) }
-    , { $set: { nickname: user.nickname, description: user.description, avatar: user.avatar } })
+    , { $set: { nickname: user.nickname } })
 }
 
 export async function verifyUser(email: string, status: Status) {

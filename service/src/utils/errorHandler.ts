@@ -13,7 +13,6 @@ export function handleErrors(res: Response, error: Error) {
     res.status(403).send({ status: 'Fail', message: error.message, data: null })
   else if (error instanceof ServiceUnavailableError)
     res.status(503).send({ status: 'Fail', message: error.message, data: null })
-
   else
     res.status(500).send({ status: 'Fail', message: error.message, data: null })
 }

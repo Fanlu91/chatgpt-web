@@ -1,5 +1,5 @@
 import type { ChatMessage, FetchFn } from 'chatgpt'
-import type { ChatRoom, UserInfo } from 'src/storage/model'
+import type { ChatRoom, UserInfo } from 'src/types/model'
 
 export interface RequestOptions {
   message: string

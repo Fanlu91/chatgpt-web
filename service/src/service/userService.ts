@@ -1,9 +1,10 @@
 import { isPhoneNumber, isValidPassword } from 'src/utils/is'
 import { sendRegisterSms } from 'src/utils/phone'
 import { ForbiddenError, ServiceUnavailableError } from 'src/utils/errorHandler'
+import type { UserInfo } from 'src/types/model'
 import { Status } from '../types/Status'
 import { encryptPassword } from '../utils/security'
-import { createUser, generateVerificationCode, getUser, getVerificationCode, updateUserPassword } from '../repository/UserRepository'
+import { createUser, generateVerificationCode, getUser, getUserById, getVerificationCode, updateUserInfo, updateUserPassword } from '../repository/UserRepository'
 import { getCacheConfig } from './configService'
 
 export const verifyUser = async (username: string, password: string) => {
@@ -103,4 +104,11 @@ export const resetPassword = async (username: string, password: string, sign: st
   updateUserPassword(user._id.toString(), encryptPassword(password))
 
   return { message: '密码重置成功 | Password reset successful' }
+}
+
+export const performUpdateUserInfo = async (userId: string, nickname: string) => {
+  const user = await getUserById(userId)
+  if (user == null || user.status !== Status.Normal)
+    throw new Error('用户不存在 | User does not exist.')
+  await updateUserInfo(userId, { nickname } as UserInfo)
 }

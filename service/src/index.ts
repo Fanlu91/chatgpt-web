@@ -6,10 +6,10 @@ import { abortChatProcess, chatConfig, chatReplyProcess, containsSensitiveWords,
 import { auth, getUserId } from './middleware/auth'
 import { clearApiKeyCache, clearConfigCache, getApiKeys, getCacheApiKeys, getCacheConfig, getOriginConfig } from './service/configService'
 import { chatModelOptions } from './types/model'
-import type { AuditConfig, CHATMODEL, ChatInfo, ChatOptions, Config, KeyConfig, MailConfig, SiteConfig, UsageResponse, UserInfo } from './types/model'
+import type { AuditConfig, CHATMODEL, ChatInfo, ChatOptions, Config, KeyConfig, MailConfig, SiteConfig, UsageResponse } from './types/model'
 import { UserRole } from './types/UserRole'
 import { Status } from './types/Status'
-import { getUserById, getUsers, updateUserInfo, updateUserRole, updateUserStatus } from './repository/UserRepository'
+import { getUserById } from './repository/UserRepository'
 import {
   clearChat,
   createChatRoom,
@@ -35,7 +35,7 @@ import {
 } from './storage/mongo'
 import { limiter } from './middleware/limiter'
 import { hasAnyRole, isNotEmptyString } from './utils/is'
-import { sendNoticeMail, sendTestMail } from './utils/mail'
+import { sendTestMail } from './utils/mail'
 import { rootAuth } from './middleware/rootAuth'
 import userRouter from './route/userRouter'
 const app = express()
@@ -527,22 +527,6 @@ router.post('/session', async (req, res) => {
   }
 })
 
-router.post('/update-user-info', auth, async (req, res) => {
-  try {
-    const { nickname, avatar, description } = req.body as UserInfo
-    const userId = req.headers.userId.toString()
-
-    const user = await getUserById(userId)
-    if (user == null || user.status !== Status.Normal)
-      throw new Error('用户不存在 | User does not exist.')
-    await updateUserInfo(userId, { nickname, avatar, description } as UserInfo)
-    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
-
 router.post('/user-chat-model', auth, async (req, res) => {
   try {
     const { chatModel } = req.body as { chatModel: CHATMODEL }
@@ -552,43 +536,6 @@ router.post('/user-chat-model', auth, async (req, res) => {
     if (user == null || user.status !== Status.Normal)
       throw new Error('用户不存在 | User does not exist.')
     await updateUserChatModel(userId, chatModel)
-    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
-
-router.get('/users', rootAuth, async (req, res) => {
-  try {
-    const page = +req.query.page
-    const size = +req.query.size
-    const data = await getUsers(page, size)
-    res.send({ status: 'Success', message: '获取成功 | Get successfully', data })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
-
-router.post('/user-status', rootAuth, async (req, res) => {
-  try {
-    const { userId, status } = req.body as { userId: string; status: Status }
-    const user = await getUserById(userId)
-    await updateUserStatus(userId, status)
-    if ((user.status === Status.PreVerify || user.status === Status.AdminVerify) && status === Status.Normal)
-      await sendNoticeMail(user.email)
-    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
-  }
-})
-
-router.post('/user-role', rootAuth, async (req, res) => {
-  try {
-    const { userId, roles } = req.body as { userId: string; roles: UserRole[] }
-    await updateUserRole(userId, roles)
     res.send({ status: 'Success', message: '更新成功 | Update successfully' })
   }
   catch (error) {

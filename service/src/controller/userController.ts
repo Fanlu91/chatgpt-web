@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken'
 import type { Request, Response } from 'express'
-import { checkUserAndPhone, getAndSendVerificationCode, register, resetPassword, verifyUser } from '../service/userService'
+import { Status } from 'src/types/Status'
+import type { UserInfo } from 'src/types/model'
+import { sendNoticeMail } from 'src/utils/mail'
+import { getUserById, getUsers, updateUserRole, updateUserStatus } from '../repository/UserRepository'
+import { checkUserAndPhone, getAndSendVerificationCode, performUpdateUserInfo, register, resetPassword, verifyUser } from '../service/userService'
 import { UserRole } from '../types/UserRole'
 import { getCacheConfig } from '../service/configService'
 import { handleErrors } from '../utils/errorHandler'
@@ -63,5 +67,54 @@ export const userResetPassword = async (req: Request, res: Response) => {
   }
   catch (error) {
     handleErrors(res, error)
+  }
+}
+
+export const updateUserInfoController = async (req, res) => {
+  try {
+    const { nickname } = req.body as UserInfo
+    const userId = req.headers.userId.toString()
+    await performUpdateUserInfo(userId, nickname)
+    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+}
+
+export const getUsersController = async (req, res) => {
+  try {
+    const page = +req.query.page
+    const size = +req.query.size
+    const data = await getUsers(page, size)
+    res.send({ status: 'Success', message: '获取成功 | Get successfully', data })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+}
+
+export const updateUserStatusController = async (req, res) => {
+  try {
+    const { userId, status } = req.body as { userId: string; status: Status }
+    const user = await getUserById(userId)
+    await updateUserStatus(userId, status)
+    if ((user.status === Status.PreVerify || user.status === Status.AdminVerify) && status === Status.Normal)
+      await sendNoticeMail(user.email)
+    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+}
+
+export const updateUserRoleController = async (req, res) => {
+  try {
+    const { userId, roles } = req.body as { userId: string; roles: UserRole[] }
+    await updateUserRole(userId, roles)
+    res.send({ status: 'Success', message: '更新成功 | Update successfully' })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
   }
 }

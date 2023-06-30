@@ -6,7 +6,6 @@ const LOCAL_NAME = 'userStorage'
 export interface UserInfo {
   nickname: string
   avatar: string
-  name: string
   description: string
   root: boolean
   config: UserConfig
@@ -23,7 +22,6 @@ export function defaultSetting(): UserState {
     userInfo: {
       nickname: '未设置',
       avatar: '',
-      name: '',
       description: '',
       root: false,
       createTime: '',

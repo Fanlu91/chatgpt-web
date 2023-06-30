@@ -22,7 +22,7 @@ const userInfo = computed(() => userStore.userInfo)
 
 const avatar = ref(userInfo.value.avatar ?? '')
 
-const name = ref(userInfo.value.name ?? '')
+const nickname = ref(userInfo.value.nickname ?? '')
 
 const description = ref(userInfo.value.description ?? '')
 
@@ -70,7 +70,7 @@ function exportData(): void {
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">用户昵称</span>
         <div class="w-[200px]">
-          <NInput v-model:value="name" placeholder="" />
+          <NInput v-model:value="nickname" placeholder="" />
         </div>
       </div>
       <div class="flex items-center space-x-4">
@@ -91,7 +91,7 @@ function exportData(): void {
       </div>
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]" />
-        <NButton type="primary" @click="updateUserInfo({ avatar, name, description })">
+        <NButton type="primary" @click="updateUserInfo({ avatar, nickname, description })">
           保存设置
         </NButton>
       </div>
