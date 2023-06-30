@@ -5,14 +5,14 @@ import type { ChatMessage } from './chatgpt'
 import { abortChatProcess, chatConfig, chatReplyProcess, containsSensitiveWords, initAuditService } from './chatgpt'
 import { auth, getUserId } from './middleware/auth'
 import { clearApiKeyCache, clearConfigCache, getApiKeys, getCacheApiKeys, getCacheConfig, getOriginConfig } from './service/configService'
-import type { AuditConfig, CHATMODEL, ChatInfo, ChatOptions, Config, KeyConfig, MailConfig, SiteConfig, UsageResponse, UserInfo } from './storage/model'
-import { chatModelOptions } from './storage/model'
+import { chatModelOptions } from './types/model'
+import type { AuditConfig, CHATMODEL, ChatInfo, ChatOptions, Config, KeyConfig, MailConfig, SiteConfig, UsageResponse, UserInfo } from './types/model'
 import { UserRole } from './types/UserRole'
 import { Status } from './types/Status'
+import { getUserById, getUsers, updateUserInfo, updateUserRole, updateUserStatus } from './repository/UserRepository'
 import {
   clearChat,
   createChatRoom,
-  createUser,
   deleteAllChatRooms,
   deleteChat,
   deleteChatRoom,
@@ -21,10 +21,7 @@ import {
   getChatRoom,
   getChatRooms,
   getChats,
-  getUser,
-  getUserById,
   getUserStatisticsByDay,
-  getUsers,
   insertChat,
   insertChatUsage,
   renameChatRoom,
@@ -34,15 +31,11 @@ import {
   updateRoomPrompt,
   updateRoomUsingContext,
   updateUserChatModel,
-  updateUserInfo,
-  updateUserRole,
-  updateUserStatus,
   upsertKey,
 } from './storage/mongo'
-import { authLimiter, limiter } from './middleware/limiter'
-import { hasAnyRole, isNotEmptyString, isPhoneNumber, isValidPassword } from './utils/is'
+import { limiter } from './middleware/limiter'
+import { hasAnyRole, isNotEmptyString } from './utils/is'
 import { sendNoticeMail, sendTestMail } from './utils/mail'
-import { encryptPassword, validateVerificationCode } from './utils/security'
 import { rootAuth } from './middleware/rootAuth'
 import userRouter from './route/userRouter'
 const app = express()
@@ -455,35 +448,6 @@ router.post('/chat-abort', [auth, limiter], async (req, res) => {
   }
   catch (error) {
     res.send({ status: 'Fail', message: '重置邮件已发送 | Reset email has been sent', data: null })
-  }
-})
-
-router.post('/register', authLimiter, async (req, res) => {
-  try {
-    const config = await getCacheConfig()
-    if (!config.siteConfig.registerEnabled)
-      throw new Error('注册账号功能未启用')
-    // console.log(req.body)
-    const { username, verificationCode, password } = req.body as { username: string; verificationCode: string; password: string }
-    if (!username || !isPhoneNumber(username))
-      throw new Error('请输入格式正确的手机号')
-
-    const user = await getUser(username)
-    if (user != null)
-      throw new Error('该手机号已注册，请直接登录')
-
-    if (!password || !isValidPassword(password))
-      throw new Error('密码太简单啦。建议最少6位且需同时包含数字和字母')
-
-    // 验证码校验
-    await validateVerificationCode(username, verificationCode)
-    // continue registration
-    const newPassword = encryptPassword(password)
-    await createUser(username, newPassword)
-    res.send({ status: 'Success', message: '注册成功。', data: null })
-  }
-  catch (error) {
-    res.send({ status: 'Fail', message: error.message, data: null })
   }
 })
 

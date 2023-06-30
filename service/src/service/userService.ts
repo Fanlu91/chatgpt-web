@@ -2,8 +2,8 @@ import { isPhoneNumber, isValidPassword } from 'src/utils/is'
 import { sendRegisterSms } from 'src/utils/phone'
 import { ForbiddenError, ServiceUnavailableError } from 'src/utils/errorHandler'
 import { Status } from '../types/Status'
-import { createUser, generateVerificationCode, getUser, updateUserPassword } from '../storage/mongo'
-import { encryptPassword, validateVerificationCode } from '../utils/security'
+import { encryptPassword } from '../utils/security'
+import { createUser, generateVerificationCode, getUser, getVerificationCode, updateUserPassword } from '../repository/UserRepository'
 import { getCacheConfig } from './configService'
 
 export const verifyUser = async (username: string, password: string) => {
@@ -61,6 +61,16 @@ export const getAndSendVerificationCode = async (phone: string) => {
   }
 }
 
+export const validateVerificationCode = async (username, verificationCode) => {
+  const existingCode = await getVerificationCode(username, verificationCode)
+  if (!existingCode)
+    throw new ForbiddenError('验证码错误')
+
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+  if (existingCode.createdAt < tenMinutesAgo)
+    throw new ForbiddenError('验证码已过期')
+}
+
 export const register = async (username: string, verificationCode: string, password: string) => {
   const config = await getCacheConfig()
   if (!config.siteConfig.registerEnabled)
@@ -71,8 +81,10 @@ export const register = async (username: string, verificationCode: string, passw
     throw new ForbiddenError('该手机号已注册，请直接登录')
 
   if (!password || !isValidPassword(password))
-    throw new ForbiddenError('密码太简单啦。建议最少6位且需同时包含数字和字母')
+    throw new ForbiddenError('密码太简单，建议最少6位且需同时包含数字和字母')
 
+  // await 关键字修饰的，这意味着如果这个函数抛出错误（或者返回一个 rejected 状态的 Promise），那么该错误会被立即抛出
+  // register 函数的后续代码将不会被执行。
   await validateVerificationCode(username, verificationCode)
 
   const newPassword = encryptPassword(password)

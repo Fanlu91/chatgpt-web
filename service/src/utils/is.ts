@@ -1,5 +1,5 @@
-import type { UserRole } from '../storage/UserRole'
-import { TextAudioType } from '../storage/model'
+import type { UserRole } from '../types/UserRole'
+import { TextAudioType } from '../types/model'
 import type { TextAuditServiceProvider } from './textAudit'
 
 export function isNumber<T extends number>(value: T | unknown): value is number {

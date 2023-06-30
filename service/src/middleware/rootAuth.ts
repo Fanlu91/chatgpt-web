@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import * as dotenv from 'dotenv'
 import { UserRole } from '../types/UserRole'
 import { Status } from '../types/Status'
-import { getUserById } from '../storage/mongo'
+import { getUserById } from '../repository/UserRepository'
 import { getCacheConfig } from '../service/configService'
 
 dotenv.config()

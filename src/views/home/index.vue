@@ -88,7 +88,8 @@ async function handleRegister() {
     showMessage.success(result.message as string)
   }
   catch (error: any) {
-    showMessage.loading(error.message ?? 'error')
+    const message = error.response?.data?.message ?? 'error'
+    showMessage.loading(message)
   }
   finally {
     loading.value = false
@@ -134,7 +135,8 @@ async function handleResetPassword() {
     router.replace('/chat')
   }
   catch (error: any) {
-    showMessage.loading(error.message ?? 'error')
+    const message = error.response?.data?.message ?? 'error'
+    showMessage.loading(message)
   }
   finally {
     loading.value = false

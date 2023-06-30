@@ -1,7 +1,7 @@
 import type { ObjectId } from 'mongodb'
 import type { TextAuditServiceOptions, TextAuditServiceProvider } from 'src/utils/textAudit'
-import { Status } from '../types/Status'
-import { UserRole } from '../types/UserRole'
+import { Status } from './Status'
+import { UserRole } from './UserRole'
 
 export class UserInfo {
   _id: ObjectId

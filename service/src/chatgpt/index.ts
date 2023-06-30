@@ -5,16 +5,14 @@ import { ChatGPTAPI, ChatGPTUnofficialProxyAPI } from 'chatgpt'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import httpsProxyAgent from 'https-proxy-agent'
 import fetch from 'node-fetch'
-import type { AuditConfig, CHATMODEL, KeyConfig, UserInfo } from 'src/storage/model'
-import jwt_decode from 'jwt-decode'
-import dayjs from 'dayjs'
+import type { AuditConfig, CHATMODEL, KeyConfig, UserInfo } from '../types/model'
 import type { TextAuditService } from '../utils/textAudit'
 import { textAuditServices } from '../utils/textAudit'
 import { getCacheApiKeys, getCacheConfig, getOriginConfig } from '../service/configService'
 import { sendResponse } from '../utils'
 import { hasAnyRole, isNotEmptyString } from '../utils/is'
 import { getChatByMessageId } from '../storage/mongo'
-import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, JWT, ModelConfig, RequestOptions } from './types'
+import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, ModelConfig, RequestOptions } from './types'
 
 const { HttpsProxyAgent } = httpsProxyAgent
 
@@ -188,14 +186,6 @@ async function containsSensitiveWords(audit: AuditConfig, text: string): Promise
     return await auditService.containsSensitiveWords(text)
   }
   return false
-}
-
-async function fetchAccessTokenExpiredTime() {
-  const config = await getCacheConfig()
-  const jwt = jwt_decode(config.accessToken) as JWT
-  if (jwt.exp)
-    return dayjs.unix(jwt.exp).format('YYYY-MM-DD HH:mm:ss')
-  return '-'
 }
 
 let cachedBalance: number | undefined

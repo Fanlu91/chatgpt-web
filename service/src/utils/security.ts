@@ -1,8 +1,4 @@
 import { createHash } from 'crypto'
-import * as dotenv from 'dotenv'
-import { getVerificationCode } from 'src/storage/mongo'
-
-dotenv.config()
 
 export function encryptPassword(input: string) {
   input = input + process.env.PASSWORD_MD5_SALT
@@ -74,20 +70,3 @@ export function encryptPassword(input: string) {
 // function getUserResetPassword(username: string) {
 //   return getVerify(username, '|rp')
 // }
-
-// export function checkUserResetPassword(verify: string, username: string) {
-//   const name = checkVerify(verify)
-//   if (name === username)
-//     return name
-//   throw new Error('Verify failed')
-// }
-
-export async function validateVerificationCode(username, verificationCode) {
-  const existingCode = await getVerificationCode(username, verificationCode)
-  if (!existingCode)
-    throw new Error('验证码错误')
-
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-  if (existingCode.createdAt < tenMinutesAgo)
-    throw new Error('验证码已过期')
-}

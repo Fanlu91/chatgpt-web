@@ -2,9 +2,8 @@ import { MongoClient, ObjectId } from 'mongodb'
 import * as dotenv from 'dotenv'
 import dayjs from 'dayjs'
 import { Status } from '../types/Status'
-import { ChatInfo, ChatRoom, ChatUsage, UserConfig, UserInfo, VerificationCode } from './model'
-import { UserRole } from '../types/UserRole'
-import type { CHATMODEL, ChatOptions, Config, KeyConfig, UsageResponse } from './model'
+import { ChatInfo, ChatRoom, ChatUsage } from '../types/model'
+import type { CHATMODEL, ChatOptions, Config, KeyConfig, UsageResponse } from '../types/model'
 
 dotenv.config()
 
@@ -18,26 +17,7 @@ const userCol = client.db(dbName).collection('user')
 const configCol = client.db(dbName).collection('config')
 const usageCol = client.db(dbName).collection('chat_usage')
 const keyCol = client.db(dbName).collection('key_config')
-const verificationCol = client.db(dbName).collection('verification_code')
 
-// 生成验证码并存在mongoDB中
-export async function generateVerificationCode(phoneNumber: string): Promise<VerificationCode> {
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-  const existingCode = await verificationCol.findOne({ phoneNumber, createdAt: { $gte: tenMinutesAgo } })
-  if (existingCode)
-    return new VerificationCode(existingCode.phoneNumber, existingCode.code)
-
-  const newCode = new VerificationCode(phoneNumber, Math.floor(1000 + Math.random() * 9000).toString())
-  await verificationCol.insertOne(newCode)
-
-  return newCode
-}
-
-export async function getVerificationCode(phoneNumber: string, code: string) {
-  const verificationCode = await verificationCol.findOne({ phoneNumber, code }) as VerificationCode
-  // console.log(verificationCode)
-  return verificationCode
-}
 /**
  * 插入聊天信息
  * @param uuid
@@ -213,88 +193,9 @@ export async function deleteChat(roomId: number, uuid: number, inversion: boolea
   await chatCol.updateOne(query, update)
 }
 
-export async function createUser(username: string, password: string, isRoot?: boolean): Promise<UserInfo> {
-  username = username.toLowerCase()
-  const userInfo = new UserInfo(username, password)
-  if (isRoot) {
-    userInfo.status = Status.Normal
-    userInfo.roles = [UserRole.Admin]
-  }
-
-  await userCol.insertOne(userInfo)
-  return userInfo
-}
-
-export async function updateUserInfo(userId: string, user: UserInfo) {
-  return userCol.updateOne({ _id: new ObjectId(userId) }
-    , { $set: { nickname: user.nickname, description: user.description, avatar: user.avatar } })
-}
-
 export async function updateUserChatModel(userId: string, chatModel: CHATMODEL) {
   return userCol.updateOne({ _id: new ObjectId(userId) }
     , { $set: { 'config.chatModel': chatModel } })
-}
-
-export async function updateUserPassword(userId: string, password: string) {
-  return userCol.updateOne({ _id: new ObjectId(userId) }
-    , { $set: { password, updateTime: new Date().toLocaleString() } })
-}
-
-export async function getUser(username: string): Promise<UserInfo> {
-  username = username.toLowerCase()
-  const userInfo = await userCol.findOne({ username }) as UserInfo
-  initUserInfo(userInfo)
-  return userInfo
-}
-
-export async function getUsers(page: number, size: number): Promise<{ users: UserInfo[]; total: number }> {
-  const query = { status: { $ne: Status.Deleted } }
-  const cursor = userCol.find(query).sort({ createTime: -1 })
-  const total = await userCol.countDocuments(query)
-  const skip = (page - 1) * size
-  const limit = size
-  const pagedCursor = cursor.skip(skip).limit(limit)
-  const users = []
-  await pagedCursor.forEach((doc) => {
-    users.push(doc)
-  })
-  users.forEach((user) => {
-    initUserInfo(user)
-  })
-  return { users, total }
-}
-
-export async function getUserById(userId: string): Promise<UserInfo> {
-  const userInfo = await userCol.findOne({ _id: new ObjectId(userId) }) as UserInfo
-  initUserInfo(userInfo)
-  return userInfo
-}
-
-function initUserInfo(userInfo: UserInfo) {
-  if (userInfo == null)
-    return
-  if (userInfo.config == null)
-    userInfo.config = new UserConfig()
-  if (userInfo.config.chatModel == null)
-    userInfo.config.chatModel = 'gpt-3.5-turbo'
-  if (userInfo.roles == null || userInfo.roles.length <= 0) {
-    userInfo.roles = [UserRole.User]
-    if (process.env.ROOT_USER === userInfo.email.toLowerCase())
-      userInfo.roles.push(UserRole.Admin)
-  }
-}
-
-export async function verifyUser(email: string, status: Status) {
-  email = email.toLowerCase()
-  return await userCol.updateOne({ email }, { $set: { status, verifyTime: new Date().toLocaleString() } })
-}
-
-export async function updateUserStatus(userId: string, status: Status) {
-  return await userCol.updateOne({ _id: new ObjectId(userId) }, { $set: { status, verifyTime: new Date().toLocaleString() } })
-}
-
-export async function updateUserRole(userId: string, roles: UserRole[]) {
-  return await userCol.updateOne({ _id: new ObjectId(userId) }, { $set: { roles, verifyTime: new Date().toLocaleString() } })
 }
 
 export async function getConfig(): Promise<Config> {

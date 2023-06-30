@@ -35,7 +35,7 @@ const verificationLimiter = rateLimit({
     return requestIp.getClientIp(req) // IP address from requestIp.mw(), as opposed to req.ip
   },
   message: async (req, res) => {
-    res.send({ status: 'Fail', message: '"抱歉1分钟内只能发送1次验证码', data: null })
+    res.status(403).send({ status: 'Fail', message: '"抱歉1分钟内只能发送1次验证码', data: null })
   },
 })
 const authLimiter = rateLimit({

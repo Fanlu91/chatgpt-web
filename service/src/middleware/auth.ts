@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import type { Request } from 'express'
+import { getUserById } from 'src/repository/UserRepository'
 import { getCacheConfig } from '../service/configService'
-import { getUserById } from '../storage/mongo'
 import { Status } from '../types/Status'
 
 const auth = async (req, res, next) => {

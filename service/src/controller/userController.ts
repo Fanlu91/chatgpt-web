@@ -50,6 +50,7 @@ export const userRegister = async (req: Request, res: Response) => {
     res.send({ status: 'Success', message: data.message, data: null })
   }
   catch (error) {
+    console.error('注册失败:', username, error.message)
     handleErrors(res, error)
   }
 }
