@@ -474,21 +474,24 @@ async function loadMoreMessage(event: any) {
   const scrollPosition = event.target.scrollHeight - event.target.scrollTop
 
   const lastId = chatStore.chat[chatIndex].data[0].uuid
-  await chatStore.syncChat({ uuid: +uuid } as Chat.History, lastId, () => {
-    loadingms && loadingms.destroy()
-    nextTick(() => scrollTo(event.target.scrollHeight - scrollPosition))
-  }, () => {
-    loadingms = ms.loading(
-      '加载中...', {
-        duration: 0,
-      },
-    )
-  }, () => {
-    allmsg && allmsg.destroy()
-    allmsg = ms.warning('没有更多了', {
-      duration: 1000,
+  await chatStore.syncChat({ uuid: +uuid } as Chat.History, lastId,
+    () => {
+      loadingms && loadingms.destroy()
+      nextTick(() => scrollTo(event.target.scrollHeight - scrollPosition))
+    },
+    () => {
+      loadingms = ms.loading(
+        '加载中...', {
+          duration: 0,
+        },
+      )
+    },
+    () => {
+      allmsg && allmsg.destroy()
+      allmsg = ms.warning('没有更多了', {
+        duration: 1000,
+      })
     })
-  })
 }
 
 const handleLoadMoreMessage = debounce(loadMoreMessage, 300)

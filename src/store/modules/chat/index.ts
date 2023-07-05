@@ -16,9 +16,8 @@ export const useChatStore = defineStore('chat-store', {
 
     getChatByUuid(state: Chat.ChatState) {
       return (uuid?: number) => {
-        if (uuid)
-          return state.chat.find(item => item.uuid === uuid)?.data ?? []
-        return state.chat.find(item => item.uuid === state.active)?.data ?? []
+        const chat = state.chat.find(item => item.uuid === (uuid ?? state.active))
+        return chat?.data ?? []
       }
     },
   },
@@ -48,39 +47,48 @@ export const useChatStore = defineStore('chat-store', {
       callback && callback()
     },
 
-    async syncChat(h: Chat.History, lastId?: number, callback?: () => void,
+    async syncChat(history: Chat.History, lastId?: number,
+      callback?: () => void,
       callbackForStartRequest?: () => void,
       callbackForEmptyMessage?: () => void) {
       // 传入的历史对象(h)是否有 uuid，如果没有，它会立即调用回调并退出
-      if (!h.uuid) {
+      if (!history.uuid) {
         callback && callback()
         return
       }
 
-      const hisroty = this.history.filter(item => item.uuid === h.uuid)[0]
+      // 历史记录中查找与给定 UUID 匹配的历史记录
+      const hisroty = this.history.filter(item => item.uuid === history.uuid)[0]
+
+      // 如果历史记录是未定义的、正在加载或者已经全部加载完成，它将不会进行任何操作，只是在适当的时机调用回调。
       if (hisroty === undefined || hisroty.loading || hisroty.all) {
         if (lastId === undefined) {
           // 加载更多不回调 避免加载概率消失
           callback && callback()
         }
+        // 所有聊天数据都已加载完毕
         if (hisroty?.all ?? false)
           callbackForEmptyMessage && callbackForEmptyMessage()
         return
       }
+
+      hisroty.loading = true
       try {
-        hisroty.loading = true
-        const chatIndex = this.chat.findIndex(item => item.uuid === h.uuid)
+        const chatIndex = this.chat.findIndex(item => item.uuid === history.uuid)
         if (chatIndex <= -1 || this.chat[chatIndex].data.length <= 0 || lastId !== undefined) {
           callbackForStartRequest && callbackForStartRequest()
-          const chatData = (await fetchGetChatHistory(h.uuid, lastId)).data
+          const chatData = (await fetchGetChatHistory(history.uuid, lastId)).data
           if (chatData.length <= 0)
             hisroty.all = true
 
           if (chatIndex <= -1)
-            this.chat.unshift({ uuid: h.uuid, data: chatData })
+            this.chat.unshift({ uuid: history.uuid, data: chatData })
           else
             this.chat[chatIndex].data.unshift(...chatData)
         }
+      }
+      catch (error) {
+        console.error('An error occurred while syncing chat:', error)
       }
       finally {
         hisroty.loading = false
