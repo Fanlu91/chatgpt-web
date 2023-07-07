@@ -35,7 +35,7 @@ const confirmPasswordStatus = computed(() => {
 onMounted(async () => {
   // console.log(authStore.$state.session)
   if (authStore.isAuthenticated)
-    router.replace('/chat')
+    router.replace('/c')
 })
 
 function handlePasswordInput() {
@@ -132,7 +132,7 @@ async function handleResetPassword() {
     loading.value = true
     const result = await fetchResetPassword(name, pwd, verifCode)
     showMessage.success(result.message as string)
-    router.replace('/chat')
+    // router.replace('/chat')
   }
   catch (error: any) {
     const message = error.response?.data?.message ?? 'error'

@@ -279,12 +279,12 @@ export const useChatStore = defineStore('chat-store', {
       this.history = []
       this.active = null
       this.recordState()
-      await router.push({ name: 'Chat' })
+      await router.push({ name: 'chat' })
     },
 
     async reloadRoute(uuid?: number) {
       this.recordState()
-      await router.push({ name: 'Chat', params: { uuid } })
+      await router.push({ name: 'child', params: { uuid } })
     },
 
     recordState() {
