@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken'
-import type { Request } from 'express'
+import type { Request, Response } from 'express'
 import { getUserById } from 'src/repository/UserRepository'
 import { getCacheConfig } from '../service/configService'
 import { Status } from '../types/Status'
 
-const auth = async (req, res, next) => {
+const auth = async (req: Request, res: Response, next: () => void) => {
   const config = await getCacheConfig()
   if (config.siteConfig.loginEnabled) {
     try {

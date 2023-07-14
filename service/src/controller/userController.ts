@@ -3,7 +3,7 @@ import type { Request, Response } from 'express'
 import { Status } from 'src/types/Status'
 import type { UserInfo } from 'src/types/model'
 import { sendNoticeMail } from 'src/utils/mail'
-import { getUserById, getUsers, updateUserRole, updateUserStatus } from '../repository/UserRepository'
+import { getUserById, listUser, updateUserRole, updateUserStatus } from '../repository/UserRepository'
 import { checkUserAndPhone, getAndSendVerificationCode, performUpdateUserInfo, register, resetPassword, verifyUser } from '../service/userService'
 import { UserRole } from '../types/UserRole'
 import { getCacheConfig } from '../service/configService'
@@ -31,13 +31,8 @@ export const login = async (req: Request, res: Response) => {
     const user = await verifyUser(username, password)
     const config = await getCacheConfig()
     const token = jwt.sign({
-      name: user.nickname,
-      phone: user.phone,
-      avatar: user.avatar,
-      description: user.description,
       userId: user._id,
       root: user.roles.includes(UserRole.Admin),
-      config: user.config,
     }, config.siteConfig.loginSalt.trim())
 
     res.send({ status: 'Success', message: '登录成功 | Login successfully', data: { token } })
@@ -82,11 +77,22 @@ export const updateUserInfoController = async (req, res) => {
   }
 }
 
+export const getUserInfoController = async (req, res) => {
+  try {
+    const userId = req.headers.userId.toString()
+    const user = await getUserById(userId)
+    res.send({ status: 'Success', message: '获取成功 | Get successfully', data: user })
+  }
+  catch (error) {
+    res.send({ status: 'Fail', message: error.message, data: null })
+  }
+}
+
 export const getUsersController = async (req, res) => {
   try {
     const page = +req.query.page
     const size = +req.query.size
-    const data = await getUsers(page, size)
+    const data = await listUser(page, size)
     res.send({ status: 'Success', message: '获取成功 | Get successfully', data })
   }
   catch (error) {

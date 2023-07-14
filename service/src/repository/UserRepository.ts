@@ -33,7 +33,7 @@ export async function getUserById(userId: string): Promise<UserInfo> {
   return userInfo
 }
 
-export async function getUsers(page: number, size: number): Promise<{ users: UserInfo[]; total: number }> {
+export async function listUser(page: number, size: number): Promise<{ users: UserInfo[]; total: number }> {
   const db = await Database.getDB()
   const userCol = db.collection(userCollection)
   const query = { status: { $ne: Status.Deleted } }

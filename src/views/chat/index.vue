@@ -5,6 +5,8 @@ import { useRoute } from 'vue-router'
 import type { MessageReactive } from 'naive-ui'
 import { NAutoComplete, NButton, NInput, NSelect, NSpace, NSpin, useDialog, useMessage } from 'naive-ui'
 import html2canvas from 'html2canvas'
+import type { CHATMODEL } from '../Setting/model'
+import { UserConfig } from '../Setting/model'
 import { Message } from './components'
 import { useScroll } from './hooks/useScroll'
 import { useChat } from './hooks/useChat'
@@ -15,8 +17,6 @@ import { useAuthStore, useChatStore, useUserStore } from '@/store'
 import { fetchChatAPIProcess, fetchChatResponseoHistory, fetchChatStopResponding, fetchUpdateUserChatModel } from '@/api'
 import { t } from '@/locales'
 import { debounce } from '@/utils/functions/debounce'
-import { UserConfig } from '@/components/common/Setting/model'
-import type { CHATMODEL } from '@/components/common/Setting/model'
 
 let controller = new AbortController()
 let lastChatInfo: any = {}
@@ -371,7 +371,7 @@ async function onResponseHistory(index: number, historyIndex: number) {
   )
 }
 
-function handleExport() {
+async function handleExport() {
   if (loading.value)
     return
 
@@ -387,7 +387,28 @@ function handleExport() {
         const canvas = await html2canvas(ele as HTMLDivElement, {
           useCORS: true,
         })
-        const imgUrl = canvas.toDataURL('image/png')
+
+        // 创建一个新的 canvas，尺寸和原 canvas 相同
+        const newCanvas = document.createElement('canvas')
+        newCanvas.width = canvas.width
+        newCanvas.height = canvas.height
+
+        const ctx = newCanvas.getContext('2d')!
+        ctx.drawImage(canvas, 0, 0) // 在新 canvas 上绘制原图像
+
+        // 添加水印
+        const watermarkText = 'luckgpt.cn'
+        ctx.font = '20px Arial'
+        ctx.textAlign = 'left'
+        ctx.fillStyle = 'rgba(0,100,0,0.5)' // 调整颜色和透明度
+
+        // 计算文本宽度
+        const textWidth = ctx.measureText(watermarkText).width
+
+        // 调整水印位置和距离底部/右侧的距离
+        ctx.fillText(watermarkText, newCanvas.width - textWidth - 12, newCanvas.height - 12)
+
+        const imgUrl = newCanvas.toDataURL('image/png')
         const tempLink = document.createElement('a')
         tempLink.style.display = 'none'
         tempLink.href = imgUrl
@@ -554,6 +575,7 @@ async function handleSyncChatModel(chatModel: CHATMODEL) {
 
 onMounted(() => {
   firstLoading.value = true
+  userStore.getUserData()
   handleSyncChat()
 
   if (authStore.token) {

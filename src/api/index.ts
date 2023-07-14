@@ -1,6 +1,6 @@
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
 import { get, post } from '@/utils/request'
-import type { AuditConfig, CHATMODEL, ConfigState, KeyConfig, MailConfig, SiteConfig, Status, UserRole } from '@/components/common/Setting/model'
+import type { AuditConfig, CHATMODEL, ConfigState, KeyConfig, MailConfig, SiteConfig, Status, UserRole } from '@/views/Setting/model'
 import { useAuthStore, useSettingStore } from '@/store'
 
 export function fetchChatConfig<T = any>() {
@@ -100,6 +100,12 @@ export function fetchUpdateUserInfo<T = any>(nickname: string, avatar: string, d
   return post<T>({
     url: '/user/update-info',
     data: { nickname, avatar, description },
+  })
+}
+
+export function fetchUserInfo<T = any>() {
+  return post<T>({
+    url: '/user/get-info',
   })
 }
 

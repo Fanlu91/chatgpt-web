@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 import { NButton, NInput, NModal, NTabPane, NTabs, useMessage } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchLogin, fetchRegister, fetchResetPassword, fetchSendVerificationCode } from '@/api'
 import Icon403 from '@/icons/403.vue'
@@ -9,6 +9,9 @@ import { useAuthStore } from '@/store'
 const visible = ref(true)
 const router = useRouter()
 const authStore = useAuthStore()
+
+if (authStore.isAuthenticated)
+  router.replace('/c')
 
 const showMessage = useMessage()
 
@@ -30,12 +33,6 @@ const confirmPasswordStatus = computed(() => {
   if (!password.value || !confirmPassword.value)
     return undefined
   return password.value !== confirmPassword.value ? 'error' : 'success'
-})
-
-onMounted(async () => {
-  // console.log(authStore.$state.session)
-  if (authStore.isAuthenticated)
-    router.replace('/c')
 })
 
 function handlePasswordInput() {
@@ -86,6 +83,7 @@ async function handleRegister() {
     loading.value = true
     const result = await fetchRegister(name, pwd, verifCode)
     showMessage.success(result.message as string)
+    activeTab.value = 'login'
   }
   catch (error: any) {
     const message = error.response?.data?.message ?? 'error'
@@ -132,7 +130,7 @@ async function handleResetPassword() {
     loading.value = true
     const result = await fetchResetPassword(name, pwd, verifCode)
     showMessage.success(result.message as string)
-    // router.replace('/chat')
+    activeTab.value = 'login'
   }
   catch (error: any) {
     const message = error.response?.data?.message ?? 'error'

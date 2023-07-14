@@ -12,6 +12,7 @@ import Key from './Keys.vue'
 import { SvgIcon } from '@/components/common'
 import { useUserStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
+import UserInfo from '@/views/userinfo/index.vue'
 
 const props = defineProps<Props>()
 
@@ -44,10 +45,19 @@ const show = computed({
   <NModal v-model:show="show" :auto-focus="false" preset="card" :style="{ 'width': !isMobile ? '80%' : '100%', 'min-height': !isMobile ? '800px' : 'auto' }">
     <div>
       <NTabs v-model:value="active" type="line" animated>
+        <NTabPane name="Info" tab="Info">
+          <template #tab>
+            <SvgIcon class="text-lg" icon="ri-user-5-line" />
+            <span class="ml-2">基本信息</span>
+          </template>
+          <div class="min-h-[100px]">
+            <UserInfo />
+          </div>
+        </NTabPane>
         <NTabPane name="General" tab="General">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:file-user-line" />
-            <span class="ml-2">{{ $t('setting.general') }}</span>
+            <span class="ml-2">基础设置</span>
           </template>
           <div class="min-h-[100px]">
             <General />
