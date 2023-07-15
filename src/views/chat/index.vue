@@ -46,6 +46,8 @@ const firstLoading = ref<boolean>(false)
 const loading = ref<boolean>(false)
 const inputRef = ref<Ref | null>(null)
 const showPrompt = ref(false)
+const nowSelectChatModel = ref<CHATMODEL | null>(null)
+const currentChatModel = computed(() => nowSelectChatModel.value ?? currentChatHistory.value?.chatModel ?? userStore.userInfo.config.chatModel)
 
 let loadingms: MessageReactive
 let allmsg: MessageReactive
@@ -69,6 +71,9 @@ async function onConversation() {
 
   if (!message || message.trim() === '')
     return
+
+  if (nowSelectChatModel.value && currentChatHistory.value)
+    currentChatHistory.value.chatModel = nowSelectChatModel.value
 
   controller = new AbortController()
 
@@ -566,6 +571,7 @@ const footerClass = computed(() => {
 })
 
 async function handleSyncChatModel(chatModel: CHATMODEL) {
+  nowSelectChatModel.value = chatModel
   if (userStore.userInfo.config == null)
     userStore.userInfo.config = new UserConfig()
   userStore.userInfo.config.chatModel = chatModel
@@ -669,7 +675,7 @@ onUnmounted(() => {
             </HoverButton>
             <NSelect
               style="width: 250px"
-              :value="userStore.userInfo.config.chatModel"
+              :value="currentChatModel"
               :options="authStore.session?.chatModels"
               :disabled="!!authStore.session?.auth && !authStore.token"
               @update-value="(val) => handleSyncChatModel(val)"

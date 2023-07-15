@@ -65,6 +65,7 @@ export class ChatRoom {
   prompt: string
   usingContext: boolean // 上下文模式
   status: Status = Status.Normal
+  chatModel: CHATMODEL
   constructor(userId: string, title: string, roomId: number) {
     this.userId = userId
     this.title = title

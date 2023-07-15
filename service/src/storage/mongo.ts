@@ -110,6 +110,17 @@ export async function updateRoomUsingContext(userId: string, roomId: number, usi
   return result.modifiedCount > 0
 }
 
+export async function updateRoomChatModel(userId: string, roomId: number, chatModel: CHATMODEL) {
+  const query = { userId, roomId }
+  const update = {
+    $set: {
+      chatModel,
+    },
+  }
+  const result = await roomCol.updateOne(query, update)
+  return result.modifiedCount > 0
+}
+
 export async function getChatRooms(userId: string) {
   const cursor = await roomCol.find({ userId, status: { $ne: Status.Deleted } })
   const rooms = []
