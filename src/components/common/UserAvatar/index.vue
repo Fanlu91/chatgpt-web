@@ -1,6 +1,6 @@
 <script setup lang='ts'>
 import { computed } from 'vue'
-import { NAvatar } from 'naive-ui'
+import { NAvatar, NTag } from 'naive-ui'
 import { useUserStore } from '@/store'
 import defaultAvatar from '@/assets/avatar.jpg'
 
@@ -17,6 +17,9 @@ const userInfo = computed(() => userStore.userInfo)
     <div class="flex-1 min-w-0 ml-2">
       <h2 v-if="userInfo.nickname" class="overflow-hidden font-bold text-md text-ellipsis whitespace-nowrap">
         {{ userInfo.nickname }}
+        <NTag size="small" :bordered="false" type="success">
+          Admin
+        </NTag>
       </h2>
     </div>
   </div>

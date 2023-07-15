@@ -498,8 +498,19 @@ router.post('/session', async (req, res) => {
       key: string
       value: string
     }[] = []
+    let userInfo: { name: string; description: string; avatar: string; userId: string; root: boolean; roles: UserRole[]; config: UserConfig }
     if (userId != null) {
       const user = await getUserById(userId)
+      userInfo = {
+        name: user.nickname,
+        description: user.description,
+        avatar: user.avatar,
+        userId: user._id.toString(),
+        root: user.roles.includes(UserRole.Admin),
+        roles: user.roles,
+        config: user.config,
+      }
+
       const keys = (await getCacheApiKeys()).filter(d => hasAnyRole(d.userRoles, user.roles))
 
       const count: { key: string; count: number }[] = []
