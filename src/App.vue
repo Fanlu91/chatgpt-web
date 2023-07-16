@@ -15,14 +15,26 @@ const renderIcon = (icon: string) => {
 }
 const menuOptions = [
   {
-    label: 'chat',
+    label: '智能对话',
     key: 'c',
     icon: renderIcon('ri:message-3-line'),
+    props: {
+      style: {
+        padding: '2px',
+        margin: '2px',
+      },
+    },
   },
   {
-    label: 'info',
+    label: '用户信息',
     key: 'u',
     icon: renderIcon('ri:file-user-line'),
+    props: {
+      style: {
+        padding: '2px',
+        margin: '2px',
+      },
+    },
   },
   // ...
 ]
@@ -41,8 +53,8 @@ const handleMenuChange = (key: string) => {
   >
     <NaiveProvider>
       <NLayout has-sider style="height: 100%">
-        <NLayoutSider width="70px">
-          <NMenu :options="menuOptions" @update:value="handleMenuChange" />
+        <NLayoutSider collapsed collapse-mode="width" :collapsed-width="52" content-style="padding: 2px;">
+          <NMenu collapsed :collapsed-width="48" :options="menuOptions" @update:value="handleMenuChange" />
         </NLayoutSider>
         <NLayoutContent>
           <RouterView />
