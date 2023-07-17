@@ -24,9 +24,9 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/layout',
-    name: 'layout',
-    component: () => import('@/views/chat/layout/Layout.vue'),
+    path: '/s',
+    name: 'settings',
+    component: () => import('@/views/Setting/index.vue'),
   },
   {
     path: '/home',

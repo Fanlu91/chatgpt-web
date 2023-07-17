@@ -1,122 +1,87 @@
 <script setup lang='ts'>
-import { computed, ref } from 'vue'
-import { NModal, NTabPane, NTabs } from 'naive-ui'
-import General from './General.vue'
-import Advanced from './Advanced.vue'
-import Statistics from './Statistics.vue'
-import About from './About.vue'
-import Site from './Site.vue'
-import Audit from './Audit.vue'
-import User from './User.vue'
-import Key from './Keys.vue'
+import { ref } from 'vue'
+import { NTabPane, NTabs } from 'naive-ui'
+
+import Advanced from '@/views/setting/Advanced.vue'
+import Audit from '@/views/setting/Audit.vue'
+import General from '@/views/setting/General.vue'
+import Key from '@/views/setting/Keys.vue'
+import Site from '@/views/setting/Site.vue'
+import Statistics from '@/views/setting/Statistics.vue'
+import User from '@/views/setting/User.vue'
+import About from '@/views/setting/About.vue'
+
 import { SvgIcon } from '@/components/common'
 import { useUserStore } from '@/store'
-import { useBasicLayout } from '@/hooks/useBasicLayout'
-import UserInfo from '@/views/userinfo/index.vue'
-
-const props = defineProps<Props>()
-
-const emit = defineEmits<Emit>()
 
 const userStore = useUserStore()
-const { isMobile } = useBasicLayout()
-
-interface Props {
-  visible: boolean
-}
-
-interface Emit {
-  (e: 'update:visible', visible: boolean): void
-}
 
 const active = ref('General')
-
-const show = computed({
-  get() {
-    return props.visible
-  },
-  set(visible: boolean) {
-    emit('update:visible', visible)
-  },
-})
 </script>
 
 <template>
-  <NModal v-model:show="show" :auto-focus="false" preset="card" :style="{ 'width': !isMobile ? '80%' : '100%', 'min-height': !isMobile ? '800px' : 'auto' }">
-    <div>
-      <NTabs v-model:value="active" type="line" animated>
-        <NTabPane name="Info" tab="Info">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri-user-5-line" />
-            <span class="ml-2">基本信息</span>
-          </template>
-          <div class="min-h-[100px]">
-            <UserInfo />
-          </div>
-        </NTabPane>
-        <NTabPane name="General" tab="General">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:file-user-line" />
-            <span class="ml-2">基础设置</span>
-          </template>
-          <div class="min-h-[100px]">
-            <General />
-          </div>
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="Advanced" tab="Advanced">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:equalizer-line" />
-            <span class="ml-2">{{ $t('setting.advanced') }}</span>
-          </template>
-          <div class="min-h-[100px]">
-            <Advanced />
-          </div>
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="Statistics" tab="Statistics">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:bar-chart-box-line" />
-            <span class="ml-2">{{ $t('setting.statistics') }}</span>
-          </template>
-          <div class="min-h-[100px]">
-            <Statistics />
-          </div>
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="Config" tab="Config">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:list-settings-line" />
-            <span class="ml-2">{{ $t('setting.config') }}</span>
-          </template>
-          <About />
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="SiteConfig" tab="SiteConfig">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:settings-line" />
-            <span class="ml-2">{{ $t('setting.siteConfig') }}</span>
-          </template>
-          <Site />
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="AuditConfig" tab="AuditConfig">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri:settings-line" />
-            <span class="ml-2">{{ $t('setting.auditConfig') }}</span>
-          </template>
-          <Audit />
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="UserConfig" tab="UserConfig">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri-user-5-line" />
-            <span class="ml-2">{{ $t('setting.userConfig') }}</span>
-          </template>
-          <User />
-        </NTabPane>
-        <NTabPane v-if="userStore.userInfo.root" name="KeysConfig" tab="KeysConfig">
-          <template #tab>
-            <SvgIcon class="text-lg" icon="ri-key-2-line" />
-            <span class="ml-2">{{ $t('setting.keysConfig') }}</span>
-          </template>
-          <Key />
-        </NTabPane>
-      </NTabs>
-    </div>
-  </NModal>
+  <NTabs v-model:value="active" type="line" animated style="padding-left: 5px;">
+    <NTabPane name="General" tab="General">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:file-user-line" />
+        <span class="ml-2">基础设置</span>
+      </template>
+      <div class="min-h-[100px]">
+        <General />
+      </div>
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="Advanced" tab="Advanced">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:equalizer-line" />
+        <span class="ml-2">{{ $t('setting.advanced') }}</span>
+      </template>
+      <div class="min-h-[100px]">
+        <Advanced />
+      </div>
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="Statistics" tab="Statistics">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:bar-chart-box-line" />
+        <span class="ml-2">{{ $t('setting.statistics') }}</span>
+      </template>
+      <div class="min-h-[100px]">
+        <Statistics />
+      </div>
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="Config" tab="Config">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:list-settings-line" />
+        <span class="ml-2">{{ $t('setting.config') }}</span>
+      </template>
+      <About />
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="SiteConfig" tab="SiteConfig">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:settings-line" />
+        <span class="ml-2">{{ $t('setting.siteConfig') }}</span>
+      </template>
+      <Site />
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="AuditConfig" tab="AuditConfig">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri:settings-line" />
+        <span class="ml-2">{{ $t('setting.auditConfig') }}</span>
+      </template>
+      <Audit />
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="UserConfig" tab="UserConfig">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri-user-5-line" />
+        <span class="ml-2">{{ $t('setting.userConfig') }}</span>
+      </template>
+      <User />
+    </NTabPane>
+    <NTabPane v-if="userStore.userInfo.root" name="KeysConfig" tab="KeysConfig">
+      <template #tab>
+        <SvgIcon class="text-lg" icon="ri-key-2-line" />
+        <span class="ml-2">{{ $t('setting.keysConfig') }}</span>
+      </template>
+      <Key />
+    </NTabPane>
+  </NTabs>
 </template>
