@@ -11,9 +11,8 @@ import { textAuditServices } from '../utils/textAudit'
 import { getCacheApiKeys, getCacheConfig, getOriginConfig } from '../service/configService'
 import { sendResponse } from '../utils'
 import { hasAnyRole, isNotEmptyString } from '../utils/is'
-import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, ModelConfig } from '../types'
 import { getChatByMessageId } from '../storage/mongo'
-import type { RequestOptions } from './types'
+import type { ChatContext, ChatGPTUnofficialProxyAPIOptions, ModelConfig, RequestOptions } from './types'
 
 const { HttpsProxyAgent } = httpsProxyAgent
 
